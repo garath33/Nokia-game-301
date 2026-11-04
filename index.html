@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tunik</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cellipse cx='7' cy='9' rx='5' ry='4' fill='%23d6ff4a'/%3E%3Cpath d='M11 8h4l-2 1.2z' fill='%23ffe14a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/tunik.css">
+</head>
+<body data-theme="classic">
+  <canvas id="view" width="1280" height="720" aria-hidden="true"></canvas>
+  <div id="fx"></div>
+  <div id="status" class="sr" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Menu Tunik</div>
+
+  <section id="menu" class="overlay">
+    <div class="card">
+      <div class="mast">
+        <svg viewBox="0 0 74 48" aria-hidden="true">
+          <ellipse cx="34" cy="27" rx="16" ry="12" fill="var(--accent)"/>
+          <ellipse cx="18" cy="27" rx="8" ry="6" fill="var(--accent)"/>
+          <ellipse cx="36" cy="16" rx="8" ry="4" fill="var(--accent)"/>
+          <ellipse cx="36" cy="38" rx="8" ry="4" fill="var(--accent)"/>
+          <circle cx="48" cy="27" r="8" fill="var(--accent)"/>
+          <path d="M54 24 L68 27 L54 30 Z" fill="#ffe14a"/>
+          <rect x="47" y="23" width="3" height="3" fill="#102000"/>
+          <rect x="47" y="29" width="3" height="3" fill="#102000"/>
+        </svg>
+        <div>
+          <h1>TUNIK</h1>
+          <p class="sub">Kachní tunelovka</p>
+        </div>
+      </div>
+      <p class="lead">Dvě stejné kačenky, jedna mapa z hlíny a malé golfové míčky. Život ubývá pořád. Hrabání ho bere podle odporu země, střela bourá rychleji a stojí víc. V krytu se život vrací pomalu. Pancíř naskočí znovu, teprve když je dobito na 100 %.</p>
+      <button id="play" class="primary" type="button">HRÁT</button>
+      <div class="label">Obtížnost</div>
+      <div class="row" role="group" aria-label="Obtížnost">
+        <button type="button" data-diff="easy" aria-pressed="false">Lehká</button>
+        <button type="button" data-diff="normal" aria-pressed="true">Normální</button>
+        <button type="button" data-diff="hard" aria-pressed="false">Těžká</button>
+      </div>
+      <p id="blurb" class="blurb"></p>
+      <div class="label">Vzhled</div>
+      <div class="row" role="group" aria-label="Vzhled">
+        <button type="button" data-theme="classic" aria-pressed="true">Klasický Tunneler</button>
+        <button type="button" data-theme="cyber" aria-pressed="false">Cyberpunk</button>
+      </div>
+      <div id="swatches" class="swatches"></div>
+      <div class="help">
+        <div><strong>Pohyb</strong><span>Šipky nebo WASD hrabou tunel. Šikmo jde taky.</span></div>
+        <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku.</span></div>
+        <div><strong>Body</strong><span>Sestřel dá 2 body. Účinnost a kadence stojí 2, pancíř 4.</span></div>
+      </div>
+      <p id="best" class="best"></p>
+      <button id="mute" type="button">Zvuk: zapnuto</button>
+    </div>
+  </section>
+
+  <section id="shop" class="overlay hidden">
+    <div class="card">
+      <div class="shop-head">
+        <div>
+          <h2 id="round-label">Kolo hotové</h2>
+          <p id="level-label" class="sub">Úroveň</p>
+        </div>
+        <p id="point-label" class="points">0 bodů</p>
+      </div>
+      <p class="lead">Za sestřel jsou 2 body. Můžeš je hned utratit za malé vylepšení, nebo je schovat. Dvě kola bez nákupu jsou pancíř.</p>
+      <div id="cards" class="cards"></div>
+      <p id="shop-note" class="note"></p>
+      <button id="next" class="primary" type="button">DALŠÍ KOLO</button>
+      <p class="keys">Klávesy 1, 2 a 3 kupují. Enter pouští další kolo.</p>
+    </div>
+  </section>
+
+  <section id="pause" class="overlay hidden">
+    <div class="card">
+      <h2>Pauza</h2>
+      <p class="lead">V pauze život neteče. Soupeř čeká s tebou.</p>
+      <button id="resume" class="primary" type="button">POKRAČOVAT</button>
+      <button id="to-menu" type="button">Zpět do menu</button>
+    </div>
+  </section>
+
+  <section id="over" class="overlay hidden">
+    <div class="card">
+      <div class="over-head">
+        <h2>Kačenka padla</h2>
+      </div>
+      <p id="over-copy" class="lead"></p>
+      <button id="again" class="primary" type="button">ZNOVU</button>
+      <button id="over-menu" type="button">Menu</button>
+    </div>
+  </section>
+
+  <div id="touch" class="touch hidden">
+    <span class="blank"></span>
+    <button id="up" type="button" aria-label="Nahoru">↑</button>
+    <button id="fire" type="button" aria-label="Střelba">●</button>
+    <button id="left" type="button" aria-label="Doleva">←</button>
+    <button id="down" type="button" aria-label="Dolů">↓</button>
+    <button id="right" type="button" aria-label="Doprava">→</button>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
