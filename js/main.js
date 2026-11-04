@@ -3,6 +3,7 @@ import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
   DIFFICULTIES,
   SHOP,
+  WINS_OPTIONS,
   buy,
   createMatch,
   describeLoadout,
@@ -10,6 +11,9 @@ import {
   startNextRound,
   step,
 } from "./sim.js";
+
+const CLASSIC_DUCK = { body: "#ffd000", wing: "#f2a400", beak: "#ff7a00", eye: "#2b1608" };
+const RIVAL_DUCK = { body: "#ffd000", wing: "#e09400", beak: "#ff7a00", eye: "#2b1608" };
 
 const THEMES = {
   classic: {
@@ -27,8 +31,10 @@ const THEMES = {
     padLine: "#9fd0ff",
     crack: "#1a0c06",
     mote: "#c4894a",
-    player: { body: "#8dff32", wing: "#d6ff4a", beak: "#ffe14a", eye: "#102000" },
-    enemy: { body: "#ff3a32", wing: "#ffb0a4", beak: "#ffd0a8", eye: "#2a0000" },
+    player: CLASSIC_DUCK,
+    enemy: RIVAL_DUCK,
+    sand: ["#e6c36a", "#f0d48a", "#c9a24e"],
+    gravel: ["#8d8a82", "#6e6a62", "#a39e94"],
     ball: "#f4f1d8",
     ballEnemy: "#ffd0c8",
     shield: "#f2f2f2",
@@ -45,7 +51,7 @@ const THEMES = {
     glow: false,
     glowA: "#3dffe8",
     glowB: "#ff2a55",
-    swatch: ["#6b3a12", "#8dff32", "#ff3a32", "#f4f1d8", "#0c3266"],
+    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#e6c36a", "#8d8a82"],
   },
   cyber: {
     id: "cyber",
@@ -62,8 +68,10 @@ const THEMES = {
     padLine: "#ff2a55",
     crack: "#ff2a55",
     mote: "#d46bff",
-    player: { body: "#3dffe8", wing: "#9dfff4", beak: "#f4ffff", eye: "#04120f" },
-    enemy: { body: "#ff2a55", wing: "#ff8aa0", beak: "#ffd0dc", eye: "#1a0008" },
+    player: CLASSIC_DUCK,
+    enemy: RIVAL_DUCK,
+    sand: ["#6a4a98", "#7c5aaa", "#543880"],
+    gravel: ["#243044", "#1a2838", "#314258"],
     ball: "#b8fff8",
     ballEnemy: "#ff4a6a",
     shield: "#d46bff",
@@ -80,7 +88,7 @@ const THEMES = {
     glow: true,
     glowA: "rgba(61,255,232,.85)",
     glowB: "rgba(255,42,85,.8)",
-    swatch: ["#241244", "#3dffe8", "#ff2a55", "#d46bff", "#062428"],
+    swatch: ["#241244", "#ffd000", "#ff7a00", "#3dffe8", "#ff2a55"],
   },
 };
 
@@ -92,6 +100,7 @@ const view = createView();
 
 const menu = document.getElementById("menu");
 const shop = document.getElementById("shop");
+const between = document.getElementById("between");
 const pause = document.getElementById("pause");
 const over = document.getElementById("over");
 const status = document.getElementById("status");
@@ -99,9 +108,10 @@ const status = document.getElementById("status");
 let save = loadSave();
 let themeId = save.theme === "cyber" ? "cyber" : "classic";
 let difficulty = DIFFICULTIES[save.difficulty] ? save.difficulty : "normal";
+let winsNeeded = WINS_OPTIONS.includes(save.winsNeeded) ? save.winsNeeded : 3;
 let mode = "menu";
 let match = null;
-let best = save.best || 0;
+let best = save.matches || 0;
 audio.setMuted(!!save.mute);
 
 const keys = { left: false, right: false, up: false, down: false, shoot: false };
@@ -119,11 +129,20 @@ document.getElementById("resume").addEventListener("click", () => {
 document.getElementById("to-menu").addEventListener("click", () => setMode("menu"));
 document.getElementById("over-menu").addEventListener("click", () => setMode("menu"));
 document.getElementById("next").addEventListener("click", () => continueRound());
+document.getElementById("between-next").addEventListener("click", () => continueRound());
 document.getElementById("mute").addEventListener("click", () => toggleMute());
 
 for (const button of document.querySelectorAll("[data-diff]")) {
   button.addEventListener("click", () => {
     difficulty = button.dataset.diff;
+    audio.click();
+    renderMenu();
+    persist();
+  });
+}
+for (const button of document.querySelectorAll("[data-wins]")) {
+  button.addEventListener("click", () => {
+    winsNeeded = Number(button.dataset.wins);
     audio.click();
     renderMenu();
     persist();
@@ -157,7 +176,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "enter") {
     if (mode === "menu" || mode === "over") startGame();
     else if (mode === "pause") setMode("play");
-    else if (mode === "shop") continueRound();
+    else if (mode === "shop" || mode === "between") continueRound();
     return;
   }
   if (mode === "shop" && (key === "1" || key === "2" || key === "3")) {
@@ -217,9 +236,11 @@ function setKey(code, down) {
 
 function startGame() {
   audio.click();
+  audio.resume();
   match = createMatch({
     seed: (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
     difficulty,
+    winsNeeded,
   });
   view.ready = false;
   view.particles.length = 0;
@@ -229,7 +250,7 @@ function startGame() {
 }
 
 function continueRound() {
-  if (!match || match.phase !== "shop") return;
+  if (!match || (match.phase !== "shop" && match.phase !== "between")) return;
   audio.click();
   startNextRound(match);
   view.ready = false;
@@ -248,6 +269,7 @@ function setMode(next) {
   mode = next;
   menu.classList.toggle("hidden", mode !== "menu");
   shop.classList.toggle("hidden", mode !== "shop");
+  between.classList.toggle("hidden", mode !== "between");
   pause.classList.toggle("hidden", mode !== "pause");
   over.classList.toggle("hidden", mode !== "over");
   document.getElementById("touch").classList.toggle("hidden", mode !== "play" && mode !== "pause");
@@ -257,6 +279,9 @@ function setMode(next) {
   } else if (mode === "shop") {
     status.textContent = "Obchod mezi koly";
     renderShop();
+  } else if (mode === "between") {
+    status.textContent = "Kolo pro soupeře";
+    renderBetween();
   } else if (mode === "over") {
     status.textContent = "Konec hry";
     renderOver();
@@ -290,16 +315,19 @@ function react(before, energy) {
   for (const event of match.events) {
     if (event.t === "dig" && event.kind === "player") audio.dig();
     if (event.t === "shoot") audio.shoot(event.kind === "enemy");
-    if (event.t === "hit") audio.hit(event.kind === "player");
+    if (event.t === "hit") {
+      audio.hit(event.kind === "player");
+      if (event.kind === "player") audio.quack();
+    }
     if (event.t === "boom" && event.kind === "enemy") audio.win();
     if (event.t === "boom" && event.kind === "player") audio.lose();
   }
   if (energy < 99.5 && match.player.energy >= 100) audio.tick();
   if (before === "play" && match.phase === "shop") setMode("shop");
+  if (before === "play" && match.phase === "between") setMode("between");
   if (before === "play" && match.phase === "over") {
-    const rounds = Math.max(0, match.round - 1);
-    if (rounds > best) {
-      best = rounds;
+    if (match.victor === "player") {
+      best += 1;
       persist();
     }
     setMode("over");
@@ -309,11 +337,14 @@ function react(before, energy) {
 function renderMenu() {
   document.getElementById("blurb").textContent = DIFFICULTIES[difficulty].blurb;
   document.getElementById("best").textContent = best
-    ? `Nejlepší přežitá kola: ${best}`
-    : "Ještě žádné dohrané kolo.";
+    ? `Vyhrané zápasy: ${best}`
+    : "Ještě žádný vyhraný zápas.";
   document.getElementById("mute").textContent = audio.muted ? "Zvuk: vypnuto" : "Zvuk: zapnuto";
   for (const button of document.querySelectorAll("[data-diff]")) {
     button.setAttribute("aria-pressed", String(button.dataset.diff === difficulty));
+  }
+  for (const button of document.querySelectorAll("[data-wins]")) {
+    button.setAttribute("aria-pressed", String(Number(button.dataset.wins) === winsNeeded));
   }
   for (const button of document.querySelectorAll("[data-theme]")) {
     button.setAttribute("aria-pressed", String(button.dataset.theme === themeId));
@@ -329,7 +360,7 @@ function renderMenu() {
 
 function renderShop() {
   const load = describeLoadout(match.upgrades);
-  document.getElementById("round-label").textContent = `Kolo ${match.round} hotové`;
+  document.getElementById("round-label").textContent = `Kolo ${match.round} tvoje · ${match.wins}:${match.losses}`;
   document.getElementById("point-label").textContent = `${match.points} bodů`;
   document.getElementById("level-label").textContent = `Úroveň kačenky ${duckLevel(match.upgrades)}`;
   const note = document.getElementById("shop-note");
@@ -377,12 +408,17 @@ function renderShop() {
   });
 }
 
+function renderBetween() {
+  document.getElementById("between-copy").textContent =
+    `Soupeř má tohle kolo. Stav ${match.wins}:${match.losses} na ${match.winsNeeded}. Další kolo začíná z nového krytu.`;
+}
+
 function renderOver() {
-  const rounds = Math.max(0, match.round - 1);
-  document.getElementById("over-copy").textContent =
-    rounds === 0
-      ? "První kolo tě dostalo. Hlína si bere život, i když jen stojíš."
-      : `Přežitá kola: ${rounds}. Bodů zbylo ${match.points}. Nejlepší záznam je ${best}.`;
+  const won = match.victor === "player";
+  document.getElementById("over-title").textContent = won ? "Zápas je tvůj" : "Soupeř vyhrál zápas";
+  document.getElementById("over-copy").textContent = won
+    ? `Výhra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}. Vyhraných zápasů: ${best}.`
+    : `Prohra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}.`;
 }
 
 function applyTheme() {
@@ -420,7 +456,7 @@ function resize() {
 }
 
 function persist() {
-  const data = { theme: themeId, difficulty, best, mute: audio.muted };
+  const data = { theme: themeId, difficulty, winsNeeded, matches: best, mute: audio.muted };
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   save = data;
 }

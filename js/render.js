@@ -2,9 +2,11 @@ import {
   AIR,
   CLAY,
   COLS,
+  GRAVEL,
   PAD,
   ROCK,
   ROWS,
+  SAND,
   SOIL,
   TILE,
   WALL,
@@ -197,7 +199,15 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
 }
 
 function paintGround(ctx, theme, cell, px, py, n, full) {
-  const pal = cell === ROCK ? theme.rock : cell === CLAY ? theme.clay : theme.soil;
+  const pal = cell === ROCK
+    ? theme.rock
+    : cell === CLAY
+      ? theme.clay
+      : cell === SAND
+        ? theme.sand
+        : cell === GRAVEL
+          ? theme.gravel
+          : theme.soil;
   ctx.fillStyle = pal[n % pal.length];
   ctx.fillRect(px, py, TILE, TILE);
   ctx.fillStyle = pal[(n >> 3) % pal.length];
@@ -258,7 +268,7 @@ function drawBall(ctx, ball, theme) {
 function drawDuck(ctx, f, palette, theme, time) {
   const pos = fighterPixel(f);
   const armor = f.armorT > 0 && f.armorLevel > 0;
-  drawDuckAt(ctx, pos.x, pos.y, f.facing, palette, theme, time, f.digging, armor);
+  drawDuckAt(ctx, pos.x, pos.y, f.facing, palette, theme, time, f.digging, armor, f.kind === "enemy");
   const pct = clamp(f.energy / 100, 0, 1);
   ctx.fillStyle = "rgba(0,0,0,.55)";
   ctx.fillRect(pos.x - 14, pos.y - 30, 28, 4);
@@ -266,7 +276,7 @@ function drawDuck(ctx, f, palette, theme, time) {
   ctx.fillRect(pos.x - 14, pos.y - 30, 28 * pct, 4);
 }
 
-function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor) {
+function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, rival) {
   ctx.save();
   ctx.translate(Math.round(x), Math.round(y));
   ctx.scale(1.55, 1.55);
@@ -301,11 +311,15 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor) {
   ctx.arc(6.4, 0, 4.15, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  if (rival) {
+    ctx.fillStyle = "#d01212";
+    ctx.fillRect(3.1, -2.5, 2.5, 5);
+  }
   ctx.fillStyle = palette.beak;
   ctx.beginPath();
-  ctx.moveTo(9.4, -1.7);
-  ctx.lineTo(15.6, 0);
-  ctx.lineTo(9.4, 1.7);
+  ctx.moveTo(9.2, -2.2);
+  ctx.lineTo(16.6, 0);
+  ctx.lineTo(9.2, 2.2);
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = palette.eye;
@@ -398,7 +412,7 @@ function drawRadar(ctx, match, theme, view, dt, radar) {
       const i = ty * COLS + tx;
       if (!match.seen[i]) continue;
       const cell = match.type[i];
-      ctx.fillStyle = cell === AIR ? theme.radarAir : cell === PAD ? theme.radarPad : theme.radarDirt;
+      ctx.fillStyle = radarColor(cell, theme);
       ctx.fillRect(x + tx * sx, y + ty * sy, Math.ceil(sx), Math.ceil(sy));
     }
   }
@@ -443,32 +457,47 @@ function drawRadar(ctx, match, theme, view, dt, radar) {
   ctx.fillText("RADAR", x + 8, y + size - 8);
 }
 
+function radarColor(cell, theme) {
+  if (cell === AIR) return theme.radarAir;
+  if (cell === PAD) return theme.radarPad;
+  if (cell === WALL) return theme.wall;
+  if (cell === ROCK) return theme.rock[0];
+  if (cell === SAND) return theme.sand[2] || theme.sand[0];
+  if (cell === CLAY) return theme.clay[0];
+  if (cell === GRAVEL) return theme.gravel[0];
+  return theme.radarDirt;
+}
+
 function drawHud(ctx, w, h, match, theme, ui) {
   const load = duckLevel(match.upgrades);
   const panelW = ui.panelW;
+  const panelH = ui.narrow ? 108 : 136;
   ctx.fillStyle = theme.panel;
-  ctx.fillRect(14, 14, panelW, 118);
+  ctx.fillRect(14, 14, panelW, panelH);
   ctx.strokeStyle = theme.line;
   ctx.lineWidth = 2;
-  ctx.strokeRect(15, 15, panelW - 2, 116);
+  ctx.strokeRect(15, 15, panelW - 2, panelH - 2);
 
   ctx.fillStyle = theme.text;
   ctx.font = ui.narrow ? "13px ui-monospace, monospace" : "14px ui-monospace, monospace";
+  const score = `${match.wins}:${match.losses}`;
   if (ui.narrow) {
-    ctx.fillText(`K${match.round} · ${match.points} bodů · úr. ${load}`, 26, 34);
+    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b`, 26, 34);
   } else {
     ctx.fillText(`KOLO ${match.round}`, 28, 36);
-    ctx.fillText(`BODY ${match.points}`, 118, 36);
-    ctx.fillText(`ÚROVEŇ ${load}`, 196, 36);
+    ctx.fillText(`BODY ${match.points}`, 150, 36);
+    ctx.fillText(`ZÁPAS ${score} NA ${match.winsNeeded}`, 28, 54);
+    ctx.fillText(`ÚR ${load}`, 230, 54);
   }
 
   const life = Math.max(0, Math.min(100, Math.round(match.player.energy)));
-  labeledBar(ctx, 28, 48, panelW - 28, match.player.energy / 100, theme.good, `ŽIVOT ${life} %`, theme);
+  const barY = ui.narrow ? 46 : 68;
+  labeledBar(ctx, 28, barY, panelW - 28, match.player.energy / 100, theme.good, `ŽIVOT ${life} %`, theme);
   const armorPct = armorFraction(match.player);
   const armorLabel = match.player.armorLevel > 0
     ? `PANCÍŘ ${Math.ceil(match.player.armorT)} s`
     : "BEZ PANCÍŘE";
-  labeledBar(ctx, 28, 80, panelW - 28, armorPct, theme.shield, armorLabel, theme);
+  labeledBar(ctx, 28, barY + 32, panelW - 28, armorPct, theme.shield, armorLabel, theme);
 
   const hint = hudHint(match);
   ctx.font = ui.narrow ? "12px ui-monospace, monospace" : "13px ui-monospace, monospace";

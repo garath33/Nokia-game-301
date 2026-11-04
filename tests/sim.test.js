@@ -2,11 +2,14 @@ import {
   AIR,
   CLAY,
   COLS,
+  GRAVEL,
   PAD,
   ROCK,
+  SAND,
   SHOT_COST,
   SOIL,
   WALL,
+  densityOf,
   buy,
   clearLine,
   createMatch,
@@ -242,6 +245,57 @@ function matchRows() {
   const moved = match.enemy.tx !== startX || match.enemy.ty !== match.enemy.homeY;
   const spent = match.enemy.energy < startEnergy - 1;
   assert(moved || spent || match.phase !== "play", "enemy leaves the shelter and spends life");
+}
+
+assert(densityOf(SAND) < densityOf(SOIL), "sand is lighter than soil");
+assert(densityOf(SOIL) < densityOf(CLAY), "soil is lighter than clay");
+assert(densityOf(CLAY) < densityOf(GRAVEL), "clay is lighter than gravel");
+assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
+
+{
+  const match = createMatch({ seed: 4, difficulty: "normal", winsNeeded: 5 });
+  assert(match.winsNeeded === 5, "match length");
+  const counts = { [SAND]: 0, [SOIL]: 0, [CLAY]: 0, [GRAVEL]: 0, [ROCK]: 0, [WALL]: 0 };
+  for (let y = 2; y < 40; y++) {
+    for (let x = 2; x < 74; x++) counts[match.type[y * COLS + x]] += 1;
+  }
+  assert(counts[SAND] > 30, "sand regions");
+  assert(counts[SOIL] > 30, "soil regions");
+  assert(counts[CLAY] > 20, "clay regions");
+  assert(counts[GRAVEL] > 20, "gravel regions");
+  assert(counts[ROCK] > 15, "rock pockets");
+  assert(counts[WALL] > 12, "bomberman pillars");
+}
+
+{
+  const match = createMatch({ seed: 21, difficulty: "normal", winsNeeded: 3 });
+  match.enemy.energy = 1;
+  strike(match, match.enemy, 80);
+  step(match, idle, 0.05);
+  assert(match.phase === "shop" && match.wins === 1, "first win opens shop");
+  match.wins = 2;
+  startNextRound(match);
+  match.enemy.energy = 1;
+  strike(match, match.enemy, 80);
+  step(match, idle, 0.05);
+  assert(match.phase === "over" && match.victor === "player" && match.wins === 3, "third win ends the match");
+}
+
+{
+  const match = createMatch({ seed: 22, difficulty: "easy", winsNeeded: 3 });
+  match.player.energy = 0;
+  step(match, idle, 0.05);
+  assert(match.phase === "between" && match.losses === 1, "loss continues the match");
+  startNextRound(match);
+  match.losses = 2;
+  match.player.energy = 0;
+  step(match, idle, 0.05);
+  assert(match.phase === "over" && match.victor === "enemy", "third loss ends the match");
+}
+
+{
+  const match = createMatch({ seed: 23, winsNeeded: 4 });
+  assert(match.winsNeeded === 3, "only 3, 5 or 8");
 }
 
 if (failed) {

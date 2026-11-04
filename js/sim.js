@@ -13,6 +13,10 @@ export const CLAY = 2;
 export const ROCK = 3;
 export const WALL = 4;
 export const PAD = 5;
+export const SAND = 6;
+export const GRAVEL = 7;
+
+export const WINS_OPTIONS = [3, 5, 8];
 
 export const SHOT_COST = 8.5;
 
@@ -39,10 +43,16 @@ const DIR_INDEX = {
 };
 
 const DIG = {
-  [SOIL]: { time: 0.2, cost: 2.5, name: "hlína" },
-  [CLAY]: { time: 0.34, cost: 4.4, name: "jíl" },
-  [ROCK]: { time: 0.62, cost: 7.5, name: "skála" },
+  [SAND]: { time: 0.12, cost: 1.3, name: "písek", density: 1, pen: 1 },
+  [SOIL]: { time: 0.2, cost: 2.5, name: "hlína", density: 2, pen: 1 },
+  [CLAY]: { time: 0.34, cost: 4.4, name: "jíl", density: 4, pen: 2 },
+  [GRAVEL]: { time: 0.5, cost: 6.2, name: "štěrk", density: 6, pen: 2 },
+  [ROCK]: { time: 0.72, cost: 8.4, name: "skála", density: 9, pen: 3 },
 };
+
+export function densityOf(cell) {
+  return DIG[cell]?.density ?? 0;
+}
 
 const ARMOR_TIME = [0, 20, 36];
 const ARMOR_ABSORB = [0, 0.65, 0.8];
@@ -60,8 +70,11 @@ export const DIFFICULTIES = {
     think: 0.62,
     hear: 13,
     radar: 7.5,
-    rocks: 5,
+    rocks: 3,
     enemyArmor: 0,
+    mix: [0.36, 0.38, 0.16, 0.07, 0.03],
+    pillar: 6,
+    pillarKeep: 0.38,
     blurb: "Pomalejší soupeř, měkčí zem a rychlejší návrat života.",
   },
   normal: {
@@ -76,8 +89,11 @@ export const DIFFICULTIES = {
     think: 0.4,
     hear: 18,
     radar: 4.2,
-    rocks: 8,
+    rocks: 6,
     enemyArmor: 0,
+    mix: [0.12, 0.34, 0.24, 0.18, 0.12],
+    pillar: 5,
+    pillarKeep: 0.72,
     blurb: "Vyrovnaná honička. Soupeř se dobíjí ve svém krytu stejně jako ty.",
   },
   hard: {
@@ -92,8 +108,11 @@ export const DIFFICULTIES = {
     think: 0.28,
     hear: 22,
     radar: 2.3,
-    rocks: 12,
+    rocks: 9,
     enemyArmor: 1,
+    mix: [0.05, 0.22, 0.22, 0.26, 0.25],
+    pillar: 4,
+    pillarKeep: 0.88,
     blurb: "Tvrdší zem, bystřejší soupeř a jeho vlastní krátký pancíř.",
   },
 };
@@ -185,10 +204,15 @@ export function describeLoadout(upgrades) {
 export function createMatch(opts = {}) {
   const seed = (opts.seed ?? 1) >>> 0;
   const difficulty = DIFFICULTIES[opts.difficulty] ? opts.difficulty : "normal";
+  const winsNeeded = WINS_OPTIONS.includes(opts.winsNeeded) ? opts.winsNeeded : 3;
   const match = {
     seed,
     difficulty,
     diff: { ...DIFFICULTIES[difficulty] },
+    winsNeeded,
+    wins: 0,
+    losses: 0,
+    victor: null,
     round: 1,
     roundScale: 1,
     points: 0,
@@ -228,7 +252,7 @@ export function buy(match, id) {
 }
 
 export function startNextRound(match) {
-  if (match.phase !== "shop") return false;
+  if (match.phase !== "shop" && match.phase !== "between") return false;
   match.round += 1;
   const growth = match.difficulty === "easy" ? 0.035 : 0.07;
   match.roundScale = Math.min(1.55, 1 + (match.round - 1) * growth);
@@ -398,7 +422,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
     f.digX = nx;
     f.digY = ny;
     f.digT = 0;
-    f.digName = info.name;
+    f.digName = `${info.name} · hustota ${info.density}`;
   }
   const cost = info.cost * match.diff.dig;
   if (f.energy <= cost + 0.05) {
@@ -493,7 +517,7 @@ function updateBalls(match, dt) {
         b.ty = ty;
         const id = ty * COLS + tx;
         const cell = match.type[id];
-        if (cell === SOIL || cell === CLAY || cell === ROCK || cell === WALL) {
+        if (cell !== AIR && cell !== PAD) {
           if (chew(match, b, tx, ty, cell, id)) {
             dead = true;
             break;
@@ -513,34 +537,26 @@ function updateBalls(match, dt) {
 
 function chew(match, b, tx, ty, cell, id) {
   if (cell === WALL) return true;
+  const info = DIG[cell];
+  if (!info) return false;
   if (cell === ROCK) {
     match.rock[id] -= 1;
     pushEvent(match, { t: "chip", x: tx, y: ty });
     if (match.rock[id] <= 0) clearCell(match, tx, ty);
     return true;
   }
-  if (cell === SOIL) {
-    if (b.pen >= 1) {
-      clearCell(match, tx, ty);
-      b.pen -= 1;
-      pushEvent(match, { t: "chip", x: tx, y: ty });
-      return b.pen <= 0;
-    }
-    return true;
+  if (b.pen >= info.pen) {
+    clearCell(match, tx, ty);
+    b.pen -= info.pen;
+    pushEvent(match, { t: "chip", x: tx, y: ty });
+    return b.pen <= 0;
   }
-  if (cell === CLAY) {
-    if (b.pen >= 2) {
-      clearCell(match, tx, ty);
-      b.pen -= 2;
-      pushEvent(match, { t: "chip", x: tx, y: ty });
-      return b.pen <= 0;
-    }
+  if (cell === CLAY || cell === GRAVEL) {
     match.type[id] = SOIL;
     b.pen = 0;
     pushEvent(match, { t: "chip", x: tx, y: ty });
-    return true;
   }
-  return false;
+  return true;
 }
 
 function fighterAt(match, b) {
@@ -557,15 +573,19 @@ function resolveDeaths(match) {
   if (match.player.energy <= 0) {
     match.player.energy = 0;
     match.player.alive = false;
-    match.phase = "over";
+    match.losses += 1;
+    match.phase = match.losses >= match.winsNeeded ? "over" : "between";
+    if (match.phase === "over") match.victor = "enemy";
     pushEvent(match, { t: "boom", x: match.player.tx, y: match.player.ty, kind: "player" });
     return;
   }
   if (match.enemy.energy <= 0) {
     match.enemy.energy = 0;
     match.enemy.alive = false;
+    match.wins += 1;
     match.points += 2;
-    match.phase = "shop";
+    match.phase = match.wins >= match.winsNeeded ? "over" : "shop";
+    if (match.phase === "over") match.victor = "player";
     pushEvent(match, { t: "boom", x: match.enemy.tx, y: match.enemy.ty, kind: "enemy" });
   }
 }
@@ -708,7 +728,7 @@ function greedyDir(match, f, gx, gy) {
     if (DIRS[i].x && DIRS[i].y) {
       if (match.type[f.ty * COLS + nx] === WALL && match.type[ny * COLS + f.tx] === WALL) continue;
     }
-    const stepCost = cell === AIR || cell === PAD ? 0 : cell === SOIL ? 1 : cell === CLAY ? 2.2 : 4;
+    const stepCost = cell === AIR || cell === PAD ? 0 : (DIG[cell]?.density ?? 4) * 0.45;
     const score = Math.hypot(nx - gx, ny - gy) + stepCost;
     if (score < bestScore) {
       bestScore = score;
@@ -798,10 +818,7 @@ export function findPath(type, x0, y0, x1, y1) {
       if (d[0] !== 0 && d[1] !== 0) {
         if (type[y * W + nx] === WALL || type[ny * W + x] === WALL) continue;
       }
-      let step = 1;
-      if (cell === SOIL) step = 3.1;
-      else if (cell === CLAY) step = 5.2;
-      else if (cell === ROCK) step = 8.5;
+      let step = 1 + (DIG[cell]?.density ?? 0) * 0.85;
       if (d[0] !== 0 && d[1] !== 0) step *= 1.3;
       const ng = node.g + step;
       const ni = ny * W + nx;
@@ -926,11 +943,8 @@ function buildMap(match, rng) {
         match.type[i] = WALL;
         continue;
       }
-      const n = hash01(x, y, seed);
-      const n2 = hash01(x + 19, y - 7, seed ^ 0x9e3779b9);
-      if (n2 > 0.9) match.type[i] = ROCK;
-      else if (n > 0.62) match.type[i] = CLAY;
-      else match.type[i] = SOIL;
+      match.type[i] = pickMaterial(regionNoise(x, y, seed), match.diff.mix);
+      if (isPillar(x, y, seed, match.diff)) match.type[i] = WALL;
     }
   }
 
@@ -968,9 +982,10 @@ function buildMap(match, rng) {
     if (match.pad[i] === 1) match.seen[i] = 1;
   }
   revealFrom(match, match.player);
+  const score = `${match.wins}:${match.losses}`;
   match.banner = match.round === 1
-    ? "Kolo 1 — soupeř je někde v hlíně"
-    : `Kolo ${match.round} — soupeř si přestěhoval kryt`;
+    ? `Kolo 1 — zápas na ${match.winsNeeded}`
+    : `Kolo ${match.round} — stav ${score}`;
   match.bannerT = 2.4;
   match.roundTime = 0;
 }
@@ -1084,6 +1099,36 @@ function makeFighter(kind, tx, ty) {
     goalX: -1,
     goalY: -1,
   };
+}
+
+function pickMaterial(n, mix) {
+  const order = [SAND, SOIL, CLAY, GRAVEL, ROCK];
+  let acc = 0;
+  for (let i = 0; i < order.length; i++) {
+    acc += mix[i];
+    if (n < acc) return order[i];
+  }
+  return ROCK;
+}
+
+function regionNoise(x, y, seed) {
+  const scale = 5;
+  const x0 = Math.floor(x / scale);
+  const y0 = Math.floor(y / scale);
+  const fx = x / scale - x0;
+  const fy = y / scale - y0;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const v00 = hash01(x0, y0, seed);
+  const v10 = hash01(x0 + 1, y0, seed);
+  const v01 = hash01(x0, y0 + 1, seed);
+  const v11 = hash01(x0 + 1, y0 + 1, seed);
+  return lerp(lerp(v00, v10, fx), lerp(v01, v11, fx), fy);
+}
+
+function isPillar(x, y, seed, diff) {
+  if (!diff.pillar) return false;
+  if (x % diff.pillar !== 2 || y % diff.pillar !== 2) return false;
+  return hash01(x, y, seed ^ 0x51ed) < diff.pillarKeep;
 }
 
 function hash01(x, y, seed) {

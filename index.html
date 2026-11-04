@@ -16,12 +16,12 @@
     <div class="card">
       <div class="mast">
         <svg viewBox="0 0 74 48" aria-hidden="true">
-          <ellipse cx="34" cy="27" rx="16" ry="12" fill="var(--accent)"/>
-          <ellipse cx="18" cy="27" rx="8" ry="6" fill="var(--accent)"/>
-          <ellipse cx="36" cy="16" rx="8" ry="4" fill="var(--accent)"/>
-          <ellipse cx="36" cy="38" rx="8" ry="4" fill="var(--accent)"/>
-          <circle cx="48" cy="27" r="8" fill="var(--accent)"/>
-          <path d="M54 24 L68 27 L54 30 Z" fill="#ffe14a"/>
+          <ellipse cx="34" cy="27" rx="16" ry="12" fill="#ffd000"/>
+          <ellipse cx="18" cy="27" rx="8" ry="6" fill="#ffd000"/>
+          <ellipse cx="36" cy="16" rx="8" ry="4" fill="#f2a400"/>
+          <ellipse cx="36" cy="38" rx="8" ry="4" fill="#f2a400"/>
+          <circle cx="48" cy="27" r="8" fill="#ffd000"/>
+          <path d="M54 24 L68 27 L54 30 Z" fill="#ff7a00"/>
           <rect x="47" y="23" width="3" height="3" fill="#102000"/>
           <rect x="47" y="29" width="3" height="3" fill="#102000"/>
         </svg>
@@ -30,7 +30,7 @@
           <p class="sub">Kachní tunelovka</p>
         </div>
       </div>
-      <p class="lead">Dvě stejné kačenky, jedna mapa z hlíny a malé golfové míčky. Život ubývá pořád. Hrabání ho bere podle odporu země, střela bourá rychleji a stojí víc. V krytu se život vrací pomalu. Pancíř naskočí znovu, teprve když je dobito na 100 %.</p>
+      <p class="lead">Dvě žluté kačenky s oranžovým zobákem, mapa z písku, hlíny, jílu, štěrku a skály a malé golfové míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.</p>
       <button id="play" class="primary" type="button">HRÁT</button>
       <div class="label">Obtížnost</div>
       <div class="row" role="group" aria-label="Obtížnost">
@@ -39,6 +39,12 @@
         <button type="button" data-diff="hard" aria-pressed="false">Těžká</button>
       </div>
       <p id="blurb" class="blurb"></p>
+      <div class="label">Délka zápasu</div>
+      <div class="row" role="group" aria-label="Délka zápasu">
+        <button type="button" data-wins="3" aria-pressed="true">Na 3 vítězná</button>
+        <button type="button" data-wins="5" aria-pressed="false">Na 5</button>
+        <button type="button" data-wins="8" aria-pressed="false">Na 8</button>
+      </div>
       <div class="label">Vzhled</div>
       <div class="row" role="group" aria-label="Vzhled">
         <button type="button" data-theme="classic" aria-pressed="true">Klasický Tunneler</button>
@@ -72,6 +78,14 @@
     </div>
   </section>
 
+  <section id="between" class="overlay hidden">
+    <div class="card">
+      <h2>Kolo pro soupeře</h2>
+      <p id="between-copy" class="lead"></p>
+      <button id="between-next" class="primary" type="button">DALŠÍ KOLO</button>
+    </div>
+  </section>
+
   <section id="pause" class="overlay hidden">
     <div class="card">
       <h2>Pauza</h2>
@@ -84,7 +98,7 @@
   <section id="over" class="overlay hidden">
     <div class="card">
       <div class="over-head">
-        <h2>Kačenka padla</h2>
+        <h2 id="over-title">Zápas končí</h2>
       </div>
       <p id="over-copy" class="lead"></p>
       <button id="again" class="primary" type="button">ZNOVU</button>
