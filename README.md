@@ -27,8 +27,10 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 - Na radaru se občas mihne nepřesná tečka. Blízké hrabání je slyšet.
 - Světlo z kačenky neprochází hlínou. Vlastní tunely zůstávají v paměti tmavší.
 - Na těžké obtížnosti má soupeř od začátku krátký pancíř. S každým dalším kolem je ostřejší.
-- Skála se míčkem láme na třikrát. Jíl klade větší odpor než hlína.
+- Čím vyšší hustota, tím dražší hrabání. Skála se míčkem láme na třikrát.
 
-```bash
-npm test
-```
+## Test
+
+`npm test` pustí pravidla (`tests/sim.test.js`) a jeden průchod hráče (`tests/experience.test.js`): hrabání podle hustoty, cenu střely, návrat do krytu a konec zápasu na zvolený počet výher.
+
+Ve hře stačí minuta: Na 3, vyjít z krytu, prostřílet pár polí, vrátit se a počkat na 100 %. Výstřel má být slyšet přes hudbu. Kvákání po zásahu ne častěji než jednou za dvě sekundy.
