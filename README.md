@@ -1,4 +1,4 @@
-# Tunik
+# Kačík
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Dobít se dá jen ve vlastním krytu, pomalu, až na 100 %. Na té stovce se znovu zapne pancíř.
 

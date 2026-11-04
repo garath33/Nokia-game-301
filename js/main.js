@@ -98,6 +98,7 @@ const ctx = canvas.getContext("2d", { alpha: false });
 const audio = createAudio();
 const view = createView();
 
+const splash = document.getElementById("splash");
 const menu = document.getElementById("menu");
 const shop = document.getElementById("shop");
 const between = document.getElementById("between");
@@ -109,7 +110,7 @@ let save = loadSave();
 let themeId = save.theme === "cyber" ? "cyber" : "classic";
 let difficulty = DIFFICULTIES[save.difficulty] ? save.difficulty : "normal";
 let winsNeeded = WINS_OPTIONS.includes(save.winsNeeded) ? save.winsNeeded : 3;
-let mode = "menu";
+let mode = "splash";
 let match = null;
 let best = save.matches || 0;
 audio.setMuted(!!save.mute);
@@ -158,7 +159,19 @@ for (const button of document.querySelectorAll("[data-theme]")) {
   });
 }
 
+splash.addEventListener("click", () => {
+  if (mode !== "splash") return;
+  audio.resume();
+  setMode("menu");
+});
+
 window.addEventListener("keydown", (event) => {
+  if (mode === "splash") {
+    event.preventDefault();
+    audio.resume();
+    setMode("menu");
+    return;
+  }
   audio.resume();
   const move = setKey(event.code, true);
   if (move) event.preventDefault();
@@ -267,6 +280,7 @@ function tryBuy(id) {
 
 function setMode(next) {
   mode = next;
+  splash.classList.toggle("hidden", mode !== "splash");
   menu.classList.toggle("hidden", mode !== "menu");
   shop.classList.toggle("hidden", mode !== "shop");
   between.classList.toggle("hidden", mode !== "between");
@@ -274,7 +288,7 @@ function setMode(next) {
   over.classList.toggle("hidden", mode !== "over");
   document.getElementById("touch").classList.toggle("hidden", mode !== "play" && mode !== "pause");
   if (mode === "menu") {
-    status.textContent = "Menu Tunik";
+    status.textContent = "Menu Kačík";
     renderMenu();
   } else if (mode === "shop") {
     status.textContent = "Obchod mezi koly";

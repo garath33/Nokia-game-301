@@ -3,30 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tunik</title>
+  <title>Kačík</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cellipse cx='7' cy='9' rx='5' ry='4' fill='%23d6ff4a'/%3E%3Cpath d='M11 8h4l-2 1.2z' fill='%23ffe14a'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/tunik.css">
 </head>
 <body data-theme="classic">
+  <script>
+    try {
+      var saved = JSON.parse(localStorage.getItem("tunik-save") || "{}");
+      if (saved.theme === "cyber") document.body.dataset.theme = "cyber";
+    } catch (e) {}
+  </script>
   <canvas id="view" width="1280" height="720" aria-hidden="true"></canvas>
   <div id="fx"></div>
-  <div id="status" class="sr" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Menu Tunik</div>
+  <div id="status" class="sr" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Kačík</div>
 
-  <section id="menu" class="overlay">
+  <section id="menu" class="overlay hidden">
     <div class="card">
       <div class="mast">
         <svg viewBox="0 0 74 48" aria-hidden="true">
-          <ellipse cx="34" cy="27" rx="16" ry="12" fill="#ffd000"/>
-          <ellipse cx="18" cy="27" rx="8" ry="6" fill="#ffd000"/>
-          <ellipse cx="36" cy="16" rx="8" ry="4" fill="#f2a400"/>
-          <ellipse cx="36" cy="38" rx="8" ry="4" fill="#f2a400"/>
-          <circle cx="48" cy="27" r="8" fill="#ffd000"/>
-          <path d="M54 24 L68 27 L54 30 Z" fill="#ff7a00"/>
+          <ellipse cx="34" cy="27" rx="16" ry="12" fill="var(--duck)"/>
+          <ellipse cx="18" cy="27" rx="8" ry="6" fill="var(--duck)"/>
+          <ellipse cx="36" cy="16" rx="8" ry="4" fill="var(--wing)"/>
+          <ellipse cx="36" cy="38" rx="8" ry="4" fill="var(--wing)"/>
+          <circle cx="48" cy="27" r="8" fill="var(--duck)"/>
+          <path d="M54 24 L68 27 L54 30 Z" fill="var(--beak)"/>
           <rect x="47" y="23" width="3" height="3" fill="#102000"/>
           <rect x="47" y="29" width="3" height="3" fill="#102000"/>
         </svg>
         <div>
-          <h1>TUNIK</h1>
+          <h1>KAČÍK</h1>
           <p class="sub">Kachní tunelovka</p>
         </div>
       </div>
@@ -114,6 +120,37 @@
     <button id="down" type="button" aria-label="Dolů">↓</button>
     <button id="right" type="button" aria-label="Doprava">→</button>
   </div>
+
+  <section id="splash" class="splash" tabindex="0" aria-label="Kačík. Klepni a pokračuj do menu.">
+    <div class="shot-wall" aria-hidden="true">
+      <span class="hole h1"></span>
+      <span class="hole h2"></span>
+      <span class="hole h3"></span>
+      <span class="crack c1"></span>
+      <span class="crack c2"></span>
+    </div>
+    <div class="hero">
+    <svg class="hero-duck" viewBox="0 0 560 420" aria-hidden="true">
+      <ellipse cx="150" cy="268" rx="78" ry="52" fill="var(--duck)"/>
+      <ellipse cx="250" cy="262" rx="150" ry="108" fill="var(--duck)"/>
+      <ellipse cx="236" cy="268" rx="78" ry="42" fill="var(--wing)"/>
+      <circle cx="372" cy="176" r="82" fill="var(--duck)"/>
+      <path d="M324 164 L448 136 L440 156 L318 180 Z" fill="var(--ink)"/>
+      <ellipse cx="400" cy="178" rx="15" ry="6" fill="#f7f7f2"/>
+      <circle cx="406" cy="178" r="5" fill="#111"/>
+      <path d="M348 198 L402 214" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="square"/>
+      <path d="M430 158 L548 142 L444 184 Z" fill="var(--beak)"/>
+      <path d="M434 196 L536 228 L440 210 Z" fill="var(--beak)"/>
+      <path d="M438 180 L500 188 L436 204 Z" fill="#4a1c0a"/>
+    </svg>
+    <span class="ball b1" aria-hidden="true"></span>
+    <span class="ball b2" aria-hidden="true"></span>
+    <span class="ball b3" aria-hidden="true"></span>
+    <span class="ball b4" aria-hidden="true"></span>
+    </div>
+    <p class="poster-title">KAČÍK</p>
+    <p class="poster-hint">Klepni kamkoliv</p>
+  </section>
 
   <script type="module" src="js/main.js"></script>
 </body>
