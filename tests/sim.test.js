@@ -6,6 +6,7 @@ import {
   PAD,
   ROCK,
   SAND,
+  TILE,
   SHELTER_REGEN,
   SHOT_COST,
   SHOT_FLOOR,
@@ -382,6 +383,94 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   }
   const fresh = createMatch({ seed: 25, difficulty: "normal" });
   assert(!fresh.shot.some((v) => v), "a new match forgets shot walls");
+  assert(fresh.scars.size === 0, "a new match has no shrapnel");
+}
+
+{
+  const match = createMatch({ seed: 11, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  const id = y * COLS + x;
+  match.type[id] = WALL;
+  match.pad[id] = 0;
+  match.player.facing = 2;
+  match.player.cool = 0;
+  match.player.energy = 80;
+  match.events.length = 0;
+  step(match, shoot, 0.05);
+  step(match, idle, 0.25);
+  assert(match.type[id] === WALL, "a solid wall stays shut");
+  assert(!match.shot[id], "a stopped shot does not open the wall");
+  assert(match.events.some((event) => event.t === "smudge" && event.x === x && event.y === y), "wall hit leaves a smudge");
+  assert(!match.events.some((event) => event.t === "chip" && event.x === x && event.y === y), "a solid wall does not chip");
+}
+
+{
+  const match = createMatch({ seed: 12, difficulty: "normal" });
+  const ox = 24;
+  const oy = 16;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const i = (oy + dy) * COLS + (ox + dx);
+      match.type[i] = WALL;
+      match.pad[i] = 0;
+    }
+  }
+  const border = 3 * COLS + 1;
+  match.type[border] = WALL;
+  match.enemy.tx = ox;
+  match.enemy.ty = oy;
+  match.enemy.energy = 4;
+  match.enemy.armorT = 0;
+  match.enemy.armorLevel = 0;
+  const remembered = match.shot.reduce((sum, value) => sum + value, 0);
+  strike(match, match.enemy, 40);
+  step(match, idle, 0.05);
+  assert(match.phase === "shop", "the blast still ends the round");
+  assert(match.scars.size > 0, "shrapnel marks nearby walls");
+  let brokeEdge = false;
+  let bunkerBite = false;
+  for (const [i, bites] of match.scars) {
+    assert(match.type[i] === WALL, "a bitten tile is still a wall");
+    assert(bites.length > 0 && bites.length <= 6, "a wall collects a few bites");
+    for (const bite of bites) {
+      assert(bite.pts.length === 3, "a bite is a short tunnel");
+      for (const p of bite.pts) {
+        assert(p.x > 0 && p.x < TILE && p.y > 0 && p.y < TILE && p.r > 1, "the tunnel stays on the tile");
+      }
+      const mouth = bite.pts[0];
+      const end = bite.pts[bite.pts.length - 1];
+      if (Math.hypot(mouth.x - end.x, mouth.y - end.y) > 2) brokeEdge = true;
+    }
+    if (match.ground[i] !== WALL) bunkerBite = true;
+  }
+  assert(brokeEdge, "shrapnel bores into the wall");
+  assert(bunkerBite, "fresh walls get bitten too");
+  assert(match.shot.reduce((sum, value) => sum + value, 0) === remembered, "shrapnel is not a shot hole");
+  const borderBites = match.scars.get(border);
+  match.enemy.tx = 2;
+  match.enemy.ty = 3;
+  match.enemy.energy = 4;
+  match.phase = "play";
+  strike(match, match.enemy, 40);
+  step(match, idle, 0.05);
+  if (match.ground[border] === WALL) assert(match.scars.get(border), "the map edge can be bitten");
+  assert(borderBites || match.scars.get(border), "a blast reaches a nearby wall");
+  match.phase = "shop";
+  assert(startNextRound(match), "next round rebuilds the earth");
+  for (const i of match.scars.keys()) {
+    assert(match.ground[i] === WALL, "only walls that stay for the match keep the bites");
+  }
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const i = (oy + dy) * COLS + (ox + dx);
+      if (match.ground[i] !== WALL) assert(!match.scars.has(i), "a rebuilt bunker forgets shrapnel");
+    }
+  }
 }
 
 if (failed) {

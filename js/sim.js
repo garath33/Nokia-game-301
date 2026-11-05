@@ -229,6 +229,7 @@ export function createMatch(opts = {}) {
     lit: new Uint8Array(COLS * ROWS),
     balls: [],
     events: [],
+    scars: new Map(),
     grace: 1.45,
     time: 0,
     roundTime: 0,
@@ -579,7 +580,10 @@ function updateBalls(match, dt) {
 }
 
 function chew(match, b, tx, ty, cell, id) {
-  if (cell === WALL) return true;
+  if (cell === WALL) {
+    pushEvent(match, { t: "smudge", x: tx, y: ty });
+    return true;
+  }
   const info = DIG[cell];
   if (!info) return false;
   if (cell === ROCK) {
@@ -620,6 +624,7 @@ function resolveDeaths(match) {
     match.phase = match.losses >= match.winsNeeded ? "over" : "between";
     if (match.phase === "over") match.victor = "enemy";
     pushEvent(match, { t: "boom", x: match.player.tx, y: match.player.ty, kind: "player" });
+    gnawWalls(match, match.player.tx, match.player.ty);
     return;
   }
   if (match.enemy.energy <= 0) {
@@ -630,6 +635,82 @@ function resolveDeaths(match) {
     match.phase = match.wins >= match.winsNeeded ? "over" : "shop";
     if (match.phase === "over") match.victor = "player";
     pushEvent(match, { t: "boom", x: match.enemy.tx, y: match.enemy.ty, kind: "enemy" });
+    gnawWalls(match, match.enemy.tx, match.enemy.ty);
+  }
+}
+
+// Shrapnel only bites the face of a solid wall. The tile stays shut.
+const SHRAPNEL_REACH = 5.1;
+const SCAR_CAP = 6;
+
+function gnawWalls(match, ox, oy) {
+  if (!match.scars) match.scars = new Map();
+  for (let dy = -6; dy <= 6; dy++) {
+    for (let dx = -6; dx <= 6; dx++) {
+      const dist = Math.hypot(dx, dy);
+      if (dist > SHRAPNEL_REACH) continue;
+      const x = ox + dx;
+      const y = oy + dy;
+      if (x < 0 || y < 0 || x >= COLS || y >= ROWS) continue;
+      const i = y * COLS + x;
+      if (match.type[i] !== WALL) continue;
+      const bites = match.scars.get(i) || [];
+      if (bites.length >= SCAR_CAP) continue;
+      let n = mix32(x + ox * 13, y + oy * 29) ^ Math.imul(bites.length + 1, 0x9e3779b1);
+      const rnd = () => {
+        n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
+        return n / 4294967296;
+      };
+      const len = dist || 1;
+      const dirx = dx / len;
+      const diry = dy / len;
+      let want = dist < 2.2 ? 3 : dist < 3.8 ? 2 : 1;
+      if (dist > 3.8 && rnd() < 0.5) want = 0;
+      for (let k = 0; k < want && bites.length < SCAR_CAP; k++) {
+        const along = (rnd() - 0.5) * TILE * 0.78;
+        let px = 0;
+        let py = 0;
+        const pts = [];
+        const steps = 3;
+        let blocked = false;
+        const mouthR = 2.3 + rnd() * 0.9;
+        const inset = mouthR + 2.2;
+        px = TILE * 0.5 - dirx * (TILE * 0.5 - inset) - diry * along;
+        py = TILE * 0.5 - diry * (TILE * 0.5 - inset) + dirx * along;
+        for (let s = 0; s < steps; s++) {
+          const r = s === 0 ? mouthR : 1.35 + rnd() * 0.7;
+          if (s === 0 && bites.some((bite) => Math.hypot(bite.pts[0].x - px, bite.pts[0].y - py) < 8)) {
+            blocked = true;
+            break;
+          }
+          pts.push({
+            x: Math.max(1.2, Math.min(TILE - 1.2, px)),
+            y: Math.max(1.2, Math.min(TILE - 1.2, py)),
+            r,
+            squash: 0.62 + rnd() * 0.3,
+            spin: rnd() * Math.PI,
+          });
+          const wobble = (rnd() - 0.5) * 1.6;
+          px += dirx * (2.6 + rnd()) - diry * wobble;
+          py += diry * (2.6 + rnd()) + dirx * wobble;
+        }
+        if (!blocked && pts.length === steps) bites.push({ seed: n >>> 0, pts });
+      }
+      if (bites.length) match.scars.set(i, bites);
+    }
+  }
+}
+
+function mix32(a, b) {
+  let n = (Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263)) >>> 0;
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return (n ^ (n >>> 16)) >>> 0;
+}
+
+function pruneScars(match) {
+  if (!match.scars || !match.ground) return;
+  for (const i of match.scars.keys()) {
+    if (match.ground[i] !== WALL) match.scars.delete(i);
   }
 }
 
@@ -1035,6 +1116,7 @@ function buildMap(match, rng) {
     match.rock.fill(0);
     match.seen.fill(0);
     match.lit.fill(0);
+    pruneScars(match);
     reopenShots(match);
   }
 
