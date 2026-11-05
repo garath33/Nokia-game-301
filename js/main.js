@@ -205,9 +205,9 @@ window.addEventListener("keydown", (event) => {
     else if (mode === "shop" || mode === "between") continueRound();
     return;
   }
-  if (mode === "shop" && (key === "1" || key === "2" || key === "3")) {
+  if (mode === "shop" && key >= "1" && key <= "9") {
     const item = SHOP[Number(key) - 1];
-    tryBuy(item.id);
+    if (item) tryBuy(item.id);
   }
 });
 
@@ -399,7 +399,7 @@ function renderMenu() {
 function renderShop() {
   const load = describeLoadout(match.upgrades);
   document.getElementById("round-label").textContent = `Kolo ${match.round} tvoje · ${match.wins}:${match.losses}`;
-  document.getElementById("point-label").textContent = `${match.points} bodů`;
+  document.getElementById("point-label").textContent = `${match.points} ${pointsWord(match.points)}`;
   document.getElementById("level-label").textContent = `Úroveň kačenky ${duckLevel(match.upgrades)}`;
   const note = document.getElementById("shop-note");
   if (match.points === 2 && match.upgrades.armor === 0) {
@@ -413,22 +413,29 @@ function renderShop() {
   }
   const root = document.getElementById("cards");
   root.replaceChildren();
+  const speed = match.upgrades.speed || 0;
   const details = {
     power: load.nextPower
-      ? `Teď průraz ${load.pen} a zásah ${load.dmg}. Další stupeň: průraz ${load.nextPower.pen}, zásah ${load.nextPower.dmg}.`
-      : `Průraz ${load.pen}, zásah ${load.dmg}. Výš už to nejde.`,
+      ? `Teď průraz ${load.pen}, zásah ${load.dmg}, míček +${match.upgrades.power * 20} %. Další stupeň: průraz ${load.nextPower.pen}, zásah ${load.nextPower.dmg}.`
+      : `Průraz ${load.pen}, zásah ${load.dmg}, míček +${match.upgrades.power * 20} %. Výš už to nejde.`,
     rate: load.nextRate
       ? `Pauza ${load.cool.toFixed(2)} s. Další stupeň ${load.nextRate.toFixed(2)} s.`
       : `Pauza ${load.cool.toFixed(2)} s. Rychleji už to nejde.`,
+    speed: speed < 3 ? `Teď +${speed * 20} % ke chůzi. Další stupeň přidá dalších 20 %.` : "Chůze +60 %. Výš už to nejde.",
+    spread: match.upgrades.spread ? "Trojstřel je zapnutý." : "Jeden nákup stačí.",
+    jack: match.queue.jack ? "Připraveno na začátek dalšího kola." : "Zapne se na začátku kola.",
+    inv: match.queue.inv ? "Připraveno na začátek dalšího kola." : "Zapne se na začátku kola.",
     armor: load.nextArmor
       ? `Další pancíř: ${load.nextArmor.seconds} s a ${load.nextArmor.absorb} % zásahu schová pancíř.`
       : `Pancíř ${load.armor.seconds} s, kryje ${load.armor.absorb} %. Znovu se zapne až na 100 % života.`,
   };
   SHOP.forEach((item, index) => {
-    const level = match.upgrades[item.id];
+    const charge = item.kind === "charge";
+    const queued = charge && match.queue[item.id];
+    const level = charge ? 0 : match.upgrades[item.id];
     const button = document.createElement("button");
     button.className = "item";
-    const can = match.points >= item.cost && level < item.max;
+    const can = match.points >= item.cost && (charge ? !queued : level < item.max);
     if (item.id === "armor" && can) button.classList.add("hinted");
     button.disabled = !can;
     button.addEventListener("click", () => tryBuy(item.id));
@@ -436,9 +443,9 @@ function renderShop() {
     title.textContent = `${index + 1}  ${item.name}`;
     const cost = document.createElement("div");
     cost.className = "cost";
-    cost.textContent = level >= item.max ? "HOTOVO" : `${item.cost} BODY`;
+    cost.textContent = !charge && level >= item.max ? "HOTOVO" : queued ? "PŘIPRAVENO" : `${item.cost} BODY`;
     const rank = document.createElement("div");
-    rank.textContent = `Stupeň ${level}/${item.max}`;
+    rank.textContent = charge ? (queued ? "Na další kolo" : "Jedno použití") : `Stupeň ${level}/${item.max}`;
     const text = document.createElement("small");
     text.textContent = `${item.blurb} ${details[item.id]}`;
     button.append(title, cost, rank, text);

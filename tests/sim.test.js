@@ -407,6 +407,69 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   assert(match.shotCue && match.shotCue.x === match.enemy.tx, "unseen shot marks a direction");
 }
 
+{
+  for (let seed = 1; seed <= 12; seed++) {
+    const match = createMatch({ seed, difficulty: "normal" });
+    assert(match.player.tx < match.enemy.tx, `player stays on the left ${seed}`);
+    match.phase = "shop";
+    startNextRound(match);
+    assert(match.player.tx < match.enemy.tx, `next round stays unmirrored ${seed}`);
+  }
+}
+
+{
+  const match = createMatch({ seed: 18, difficulty: "normal" });
+  match.phase = "shop";
+  match.points = 8;
+  assert(buy(match, "jack").ok, "buy jackhammer");
+  assert(buy(match, "spread").ok, "buy spread");
+  assert(match.points === 4, "both cost 2");
+  assert(match.queue.jack, "jack waits for the round");
+  startNextRound(match);
+  assert(match.player.jackT === 20, "jack starts with the round");
+  assert(!match.queue.jack, "queue is spent");
+  assert(match.upgrades.spread === 1, "spread stays");
+  const y = match.player.ty;
+  const wall = match.player.tx + 1;
+  match.type[y * COLS + wall] = WALL;
+  match.player.moving = false;
+  match.diff.regen = 0;
+  match.diff.drain = 0;
+  match.player.energy = 80;
+  step(match, { ...idle, right: true }, 0.2);
+  assert(match.type[y * COLS + wall] === AIR, "jackhammer opens a wall");
+  assert(match.player.energy === 80, "jackhammer costs no life");
+  match.player.moving = false;
+  match.player.tx = wall;
+  match.upgrades.spread = 1;
+  match.player.cool = 0;
+  match.player.energy = 80;
+  const aim = y;
+  for (let s = 1; s <= 8; s++) match.type[aim * COLS + match.player.tx + s] = AIR;
+  step(match, { ...idle, shoot: true }, 0.05);
+  assert(match.balls.length === 3, `spread fires three balls (${match.balls.length})`);
+}
+
+{
+  const match = createMatch({ seed: 19, difficulty: "normal" });
+  match.player.invT = 30;
+  match.player.energy = 100;
+  assert(strike(match, match.player, 30) === 0, "invincible ignores the hit");
+  assert(match.player.energy === 100, "life stays full");
+  match.player.invT = 0;
+  match.loot = 29;
+  match.grace = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  match.type[y * COLS + x] = SOIL;
+  match.player.facing = 2;
+  match.player.cool = 0;
+  match.player.energy = 90;
+  step(match, { ...idle, shoot: true }, 0.2);
+  const gained = match.upgrades.power + match.upgrades.rate + match.upgrades.speed + match.upgrades.spread;
+  assert(match.player.jackT > 0 || match.player.invT > 0 || gained > 0, "the 30th shot tile drops a bonus");
+}
+
 if (failed) {
   console.error(`${failed} failed`);
   process.exit(1);

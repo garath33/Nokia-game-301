@@ -265,6 +265,11 @@ button:disabled {
 .shop-head h2, .over-head h2, #pause h2 { margin: 0; letter-spacing: 0.08em; }
 .points { font-size: 28px; color: var(--accent); margin: 0; }
 
+#shop .card {
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

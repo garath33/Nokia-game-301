@@ -47,7 +47,27 @@ export function noteEvents(view, match, theme) {
     }
     if (event.t === "boom") view.shake = 9;
     if (event.t === "shoot") burst(view, event.x, event.y, theme, 2);
+    if (event.t === "loot") {
+      const pos = tileCenter(event.x, event.y);
+      view.floaters.push({
+        x: pos.x,
+        y: pos.y - 12,
+        text: lootLabel(event.id),
+        life: 1.4,
+        max: 1.4,
+        color: theme.accent || theme.good,
+      });
+    }
   }
+}
+
+function lootLabel(id) {
+  if (id === "power") return "Účinnost střelby";
+  if (id === "rate") return "Rychlost střelby";
+  if (id === "speed") return "Rychlejší chůze";
+  if (id === "spread") return "Trojstřel";
+  if (id === "jack") return "Zbíječka";
+  return "I AM INVINCIBLE";
 }
 
 export function drawWorld(ctx, w, h, match, theme, view, time, dt) {
@@ -268,16 +288,26 @@ function drawBall(ctx, ball, theme) {
   ctx.globalAlpha = 1;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, 3.1, 0, Math.PI * 2);
+  ctx.arc(ball.x, ball.y, ball.r || 3.1, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "rgba(255,255,255,.8)";
   ctx.fillRect(ball.x - 1, ball.y - 1, 1, 1);
 }
 
+const CHROME = { body: "#9aa6b2", wing: "#6a737c", beak: "#4e565e", eye: "#ff1a10" };
+
 function drawDuck(ctx, f, palette, theme, time) {
   const pos = fighterPixel(f);
   const armor = f.armorT > 0 && f.armorLevel > 0;
-  drawDuckAt(ctx, pos.x, pos.y, f.facing, palette, theme, time, f.digging, armor, f.kind === "enemy");
+  const chrome = f.kind === "player" && f.invT > 0;
+  drawDuckAt(ctx, pos.x, pos.y, f.facing, chrome ? CHROME : palette, theme, time, f.digging, armor, f.kind === "enemy", chrome);
+  if (chrome) {
+    ctx.fillStyle = "#ff240f";
+    ctx.font = "12px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("I AM INVINCIBLE", pos.x, pos.y - 38);
+    ctx.textAlign = "left";
+  }
   const pct = clamp(f.energy / 100, 0, 1);
   ctx.fillStyle = "rgba(0,0,0,.55)";
   ctx.fillRect(pos.x - 14, pos.y - 30, 28, 4);
@@ -285,7 +315,7 @@ function drawDuck(ctx, f, palette, theme, time) {
   ctx.fillRect(pos.x - 14, pos.y - 30, 28 * pct, 4);
 }
 
-function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, rival) {
+function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, rival, chrome) {
   ctx.save();
   ctx.translate(Math.round(x), Math.round(y));
   ctx.scale(1.55, 1.55);
@@ -331,9 +361,16 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.lineTo(9.2, 2.2);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = palette.eye;
-  ctx.fillRect(6.2, -2.15, 1.6, 1.5);
-  ctx.fillRect(6.2, 0.7, 1.6, 1.5);
+  if (chrome) {
+    ctx.fillStyle = "#ff240f";
+    ctx.fillRect(6.2, -2.4, 2.1, 1.8);
+    ctx.fillStyle = "#2a3138";
+    ctx.fillRect(6.2, 0.7, 1.6, 1.5);
+  } else {
+    ctx.fillStyle = palette.eye;
+    ctx.fillRect(6.2, -2.15, 1.6, 1.5);
+    ctx.fillRect(6.2, 0.7, 1.6, 1.5);
+  }
   if (armor) {
     ctx.strokeStyle = theme.shield;
     ctx.lineWidth = 1.6;
@@ -542,6 +579,8 @@ function armorFraction(f) {
 
 function hudHint(match) {
   const p = match.player;
+  if (p.invT > 0) return `I AM INVINCIBLE · ${Math.ceil(p.invT)} s`;
+  if (p.jackT > 0) return `Zbíječka · ${Math.ceil(p.jackT)} s. Zem neklade odpor.`;
   const onPad = match.pad[p.ty * COLS + p.tx] === 1;
   if (p.lowPower) return "Málo života na probití. Vrať se do krytu.";
   if (p.digging) return `Probíjíš: ${p.digName}. Střela je rychlejší a žere víc.`;

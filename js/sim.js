@@ -19,6 +19,7 @@ export const GRAVEL = 7;
 export const WINS_OPTIONS = [3, 5, 8];
 
 export const SHOT_COST = 5.1;
+export const LOOT_EVERY = 30;
 export const HIT_GRACE = 0.25;
 
 export const DIRS = [
@@ -117,20 +118,55 @@ export const SHOP = [
     id: "power",
     cost: 2,
     max: 3,
+    kind: "rank",
     name: "Účinnost střelby",
-    blurb: "Míček projede víc polí a sebere víc života.",
+    blurb: "Větší průraz a zásah. Míček je o 20 % větší za každý stupeň.",
   },
   {
     id: "rate",
     cost: 2,
     max: 3,
+    kind: "rank",
     name: "Rychlost střelby",
     blurb: "Kratší pauza mezi golfovými míčky.",
+  },
+  {
+    id: "speed",
+    cost: 2,
+    max: 3,
+    kind: "rank",
+    name: "Rychlost chůze",
+    blurb: "Každý stupeň zrychlí chůzi o 20 %.",
+  },
+  {
+    id: "spread",
+    cost: 2,
+    max: 1,
+    kind: "rank",
+    name: "Trojstřel",
+    blurb: "Jeden výstřel: míček rovně a dva pod úhlem 45°.",
+  },
+  {
+    id: "jack",
+    cost: 2,
+    max: 1,
+    kind: "charge",
+    name: "Zbíječka",
+    blurb: "20 s. Zem i pilíře povolí hned a bez ztráty života.",
+  },
+  {
+    id: "inv",
+    cost: 2,
+    max: 1,
+    kind: "charge",
+    name: "Nezranitelnost",
+    blurb: "30 s. Střely neberou život. Kačenka se zatáhne do kovu.",
   },
   {
     id: "armor",
     cost: 4,
     max: 2,
+    kind: "rank",
     name: "Pancíř",
     blurb: "Po dobití na 100 % chrání delší dobu. Zásah schytá hlavně on.",
   },
@@ -155,7 +191,7 @@ export function mulberry32(seed) {
 }
 
 export function duckLevel(upgrades) {
-  return 1 + upgrades.power + upgrades.rate + upgrades.armor;
+  return 1 + upgrades.power + upgrades.rate + upgrades.armor + (upgrades.speed || 0) + (upgrades.spread || 0);
 }
 
 export function shotPen(power) {
@@ -211,7 +247,9 @@ export function createMatch(opts = {}) {
     round: 1,
     roundScale: 1,
     points: 0,
-    upgrades: { power: 0, rate: 0, armor: 0 },
+    upgrades: { power: 0, rate: 0, armor: 0, speed: 0, spread: 0 },
+    queue: { jack: false, inv: false },
+    loot: 0,
     phase: "play",
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
@@ -239,8 +277,15 @@ export function buy(match, id) {
   if (match.phase !== "shop") return { ok: false, reason: "Obchod je mezi koly." };
   const item = SHOP.find((entry) => entry.id === id);
   if (!item) return { ok: false, reason: "Neznámá věc." };
-  if (match.upgrades[id] >= item.max) return { ok: false, reason: "Výš už to nejde." };
   if (match.points < item.cost) return { ok: false, reason: "Málo bodů." };
+  if (item.kind === "charge") {
+    if (match.queue[id]) return { ok: false, reason: "Už čeká na další kolo." };
+    match.points -= item.cost;
+    match.queue[id] = true;
+    pushEvent(match, { t: "buy", id });
+    return { ok: true };
+  }
+  if (match.upgrades[id] >= item.max) return { ok: false, reason: "Výš už to nejde." };
   match.points -= item.cost;
   match.upgrades[id] += 1;
   pushEvent(match, { t: "buy", id });
@@ -265,7 +310,7 @@ export function startNextRound(match) {
 }
 
 export function strike(match, target, raw) {
-  if (!target || target.energy <= 0 || target.hitGrace > 0) return 0;
+  if (!target || target.energy <= 0 || target.hitGrace > 0 || target.invT > 0) return 0;
   let amount = raw;
   if (target.armorT > 0 && target.armorLevel > 0) {
     const absorb = ARMOR_ABSORB[target.armorLevel] || 0;
@@ -358,6 +403,8 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
     f.hitGrace -= dt;
     if (f.hitGrace < 0.001) f.hitGrace = 0;
   }
+  if (f.jackT > 0) f.jackT = Math.max(0, f.jackT - dt);
+  if (f.invT > 0) f.invT = Math.max(0, f.invT - dt);
   f.cool = Math.max(0, f.cool - dt);
   const onPad = onOwnPad(match, f);
   if (f.armorT > 0 && !onPad && drainOn) f.armorT = Math.max(0, f.armorT - dt);
@@ -400,6 +447,15 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   }
   const id = ny * COLS + nx;
   const cell = match.type[id];
+  if (f.jackT > 0 && cell !== AIR && cell !== PAD && !isBorder(nx, ny)) {
+    clearCell(match, nx, ny);
+    f.digging = false;
+    f.digT = 0;
+    f.lowPower = false;
+    pushEvent(match, { t: "dig", x: nx, y: ny, kind: f.kind });
+    startMove(f, nx, ny, 0.06);
+    return;
+  }
   if (cell === WALL) {
     f.digging = false;
     f.digT = 0;
@@ -416,7 +472,8 @@ function tryMoveOrDig(match, f, dt, speedMul) {
       if (sideA === WALL && sideB === WALL) return;
     }
     const diag = d.x !== 0 && d.y !== 0;
-    startMove(f, nx, ny, (diag ? 0.16 : 0.12) / speedMul);
+    const pace = f.kind === "player" ? 1 + 0.2 * (match.upgrades.speed || 0) : 1;
+    startMove(f, nx, ny, (diag ? 0.16 : 0.12) / (speedMul * pace));
     return;
   }
 
@@ -466,22 +523,28 @@ function tryShoot(match, f) {
   const rate = f.kind === "player" ? match.upgrades.rate : 0;
   f.cool = fireCooldown(rate);
   const power = f.kind === "player" ? match.upgrades.power : 0;
-  const d = DIRS[f.facing];
-  const len = Math.hypot(d.x, d.y) || 1;
+  const spread = f.kind === "player" && match.upgrades.spread > 0;
+  const facings = spread ? [f.facing, (f.facing + 1) % 8, (f.facing + 7) % 8] : [f.facing];
+  const radius = 3.1 * (f.kind === "player" ? 1.2 ** power : 1);
   const pos = fighterPixel(f);
   const speed = 360;
-  match.balls.push({
-    x: pos.x + (d.x / len) * 16,
-    y: pos.y + (d.y / len) * 16,
-    vx: (d.x / len) * speed,
-    vy: (d.y / len) * speed,
-    age: 0,
-    pen: shotPen(power),
-    dmg: ballDamage(match, f, power),
-    owner: f.kind,
-    tx: -99,
-    ty: -99,
-  });
+  for (const facing of facings) {
+    const d = DIRS[facing];
+    const len = Math.hypot(d.x, d.y) || 1;
+    match.balls.push({
+      x: pos.x + (d.x / len) * 16,
+      y: pos.y + (d.y / len) * 16,
+      vx: (d.x / len) * speed,
+      vy: (d.y / len) * speed,
+      age: 0,
+      pen: shotPen(power),
+      dmg: ballDamage(match, f, power),
+      r: radius,
+      owner: f.kind,
+      tx: -99,
+      ty: -99,
+    });
+  }
   pushEvent(match, { t: "shoot", x: f.tx, y: f.ty, kind: f.kind });
   if (f.kind === "player") match.noise = { x: f.tx, y: f.ty, ttl: 1.6, kind: "player" };
   else if (!match.lit[f.ty * COLS + f.tx]) match.shotCue = { x: f.tx, y: f.ty, ttl: 1.15 };
@@ -545,11 +608,15 @@ function chew(match, b, tx, ty, cell, id) {
   if (cell === ROCK) {
     match.rock[id] -= 1;
     pushEvent(match, { t: "chip", x: tx, y: ty });
-    if (match.rock[id] <= 0) clearCell(match, tx, ty);
+    if (match.rock[id] <= 0) {
+      clearCell(match, tx, ty);
+      if (b.owner === "player") maybeLoot(match, tx, ty);
+    }
     return true;
   }
   if (b.pen >= info.pen) {
     clearCell(match, tx, ty);
+    if (b.owner === "player") maybeLoot(match, tx, ty);
     b.pen -= info.pen;
     pushEvent(match, { t: "chip", x: tx, y: ty });
     return b.pen <= 0;
@@ -918,6 +985,35 @@ function revealFrom(match, f) {
   }
 }
 
+function isBorder(x, y) {
+  return x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2;
+}
+
+const LOOT_IDS = ["power", "rate", "speed", "spread", "jack", "inv"];
+
+function maybeLoot(match, x, y) {
+  match.loot += 1;
+  if (match.loot < LOOT_EVERY) return;
+  match.loot = 0;
+  const rng = mulberry32((match.seed + x * 17 + y * 131 + match.round * 997) >>> 0);
+  let id = LOOT_IDS[(rng() * LOOT_IDS.length) | 0];
+  for (let n = 0; n < LOOT_IDS.length; n++) {
+    if (lootOpen(match, id)) break;
+    id = LOOT_IDS[(LOOT_IDS.indexOf(id) + 1) % LOOT_IDS.length];
+  }
+  if (!lootOpen(match, id)) return;
+  if (id === "jack") match.player.jackT = 20;
+  else if (id === "inv") match.player.invT = 30;
+  else match.upgrades[id] += 1;
+  pushEvent(match, { t: "loot", x, y, id });
+}
+
+function lootOpen(match, id) {
+  if (id === "jack" || id === "inv") return true;
+  const item = SHOP.find((entry) => entry.id === id);
+  return item && match.upgrades[id] < item.max;
+}
+
 function clearCell(match, x, y) {
   const i = y * COLS + x;
   match.type[i] = AIR;
@@ -968,6 +1064,10 @@ function buildMap(match, rng) {
   match.enemy.facing = facingToward(pair.ex, pair.ey, pair.px, pair.py);
   rearm(match, match.player);
   rearm(match, match.enemy);
+  if (match.queue.jack) match.player.jackT = 20;
+  if (match.queue.inv) match.player.invT = 30;
+  match.queue.jack = false;
+  match.queue.inv = false;
   for (let i = 0; i < match.pad.length; i++) {
     if (match.pad[i] === 1) match.seen[i] = 1;
   }
@@ -987,11 +1087,8 @@ function placeBunkers(match, rng) {
     const ex = COLS - 8 - ((rng() * (COLS * 0.38)) | 0);
     const ey = 8 + ((rng() * (ROWS - 16)) | 0);
     if (Math.hypot(px - ex, py - ey) < 26) continue;
-    if (rng() < 0.5) {
-      return doors(px, py, ex, ey);
-    }
-    return doors(ex, ey, px, py);
-  }
+  return doors(px, py, ex, ey);
+}
   return doors(12, (ROWS / 2) | 0, COLS - 13, (ROWS / 2) | 0);
 }
 
@@ -1060,6 +1157,8 @@ function makeFighter(kind, tx, ty) {
     lowPower: false,
     energy: 100,
     hitGrace: 0,
+    jackT: 0,
+    invT: 0,
     cool: 0,
     armorT: 0,
     armorLevel: 0,
