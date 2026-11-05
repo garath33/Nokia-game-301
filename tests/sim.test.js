@@ -211,7 +211,7 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   const match = createMatch({ seed: 9, difficulty: "hard" });
   match.enemy.energy = 4;
   strike(match, match.enemy, 40);
-  step(match, idle, 0.02);
+  step(match, idle, 2);
   assert(match.phase === "shop", "kill opens shop");
   assert(match.points === 2, "kill pays 2");
   assert(!buy(match, "armor").ok, "armor needs 4");
@@ -300,31 +300,54 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   const match = createMatch({ seed: 21, difficulty: "normal", winsNeeded: 3 });
   match.enemy.energy = 1;
   strike(match, match.enemy, 80);
-  step(match, idle, 0.05);
+  step(match, idle, 2);
   assert(match.phase === "shop" && match.wins === 1, "first win opens shop");
   match.wins = 2;
   startNextRound(match);
   match.enemy.energy = 1;
   strike(match, match.enemy, 80);
-  step(match, idle, 0.05);
+  step(match, idle, 2);
   assert(match.phase === "over" && match.victor === "player" && match.wins === 3, "third win ends the match");
 }
 
 {
   const match = createMatch({ seed: 22, difficulty: "easy", winsNeeded: 3 });
   match.player.energy = 0;
-  step(match, idle, 0.05);
+  step(match, idle, 2);
   assert(match.phase === "between" && match.losses === 1, "loss continues the match");
   startNextRound(match);
   match.losses = 2;
   match.player.energy = 0;
-  step(match, idle, 0.05);
+  step(match, idle, 2);
   assert(match.phase === "over" && match.victor === "enemy", "third loss ends the match");
 }
 
 {
   const match = createMatch({ seed: 23, winsNeeded: 4 });
   assert(match.winsNeeded === 3, "only 3, 5 or 8");
+}
+
+{
+  const match = createMatch({ seed: 24, difficulty: "normal" });
+  match.player.energy = 0;
+  const x = match.player.tx;
+  const y = match.player.ty;
+  step(match, idle, 0.05);
+  assert(match.phase === "boom", "death opens with an explosion");
+  let marks = 0;
+  let wall = 0;
+  let ground = 0;
+  for (let i = 0; i < match.scar.length; i++) {
+    if (!match.scar[i]) continue;
+    marks += 1;
+    if (match.type[i] === WALL) wall += 1;
+    else ground += 1;
+  }
+  assert(marks >= 12, "shrapnel scars the area");
+  assert(wall > 0 && ground > 0, "scars land in walls and in the ground");
+  assert(match.scar[y * COLS + x] >= 2, "the blast is thick at the duck");
+  step(match, idle, 2);
+  assert(match.phase === "between", "the round ends after the blast");
 }
 
 {

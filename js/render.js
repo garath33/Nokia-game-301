@@ -47,7 +47,7 @@ export function noteEvents(view, match, theme) {
       });
       if (event.kind === "player") view.shake = Math.max(view.shake, 5);
     }
-    if (event.t === "boom") view.shake = 9;
+    if (event.t === "boom") explode(view, event.x, event.y, theme);
     if (event.t === "shoot") burst(view, event.x, event.y, theme, 2);
     if (event.t === "loot") {
       const pos = tileCenter(event.x, event.y);
@@ -124,7 +124,7 @@ export function drawWorld(ctx, w, h, match, theme, view, time, dt) {
 
   if (enemyVisible(match)) drawDuck(ctx, match.enemy, theme.enemy, theme, time);
   drawGhost(ctx, match, theme, time);
-  drawDuck(ctx, match.player, theme.player, theme, time);
+  if (match.player.alive) drawDuck(ctx, match.player, theme.player, theme, time);
 
   updateBits(ctx, view, dt);
   ctx.restore();
@@ -220,7 +220,35 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
       ctx.globalAlpha = light < 1 ? 0.55 : 1;
     }
   }
+  if (match.scar && match.scar[i]) drawScar(ctx, x, y, match.scar[i]);
   ctx.globalAlpha = 1;
+}
+
+function drawScar(ctx, x, y, level) {
+  const px = x * TILE;
+  const py = y * TILE;
+  const n = hash(x, y);
+  const span = TILE - 6;
+  const streaks = 2 + level;
+  ctx.save();
+  ctx.lineCap = "square";
+  ctx.lineWidth = 2 + level;
+  ctx.globalAlpha = 0.95;
+  for (let s = 0; s < streaks; s++) {
+    const x1 = px + 3 + ((n >>> (s * 3)) % span);
+    const y1 = py + 3 + ((n >>> (s * 3 + 5)) % span);
+    const x2 = px + 3 + ((n >>> (s * 3 + 9)) % span);
+    const y2 = py + 3 + ((n >>> (s * 3 + 13)) % span);
+    ctx.strokeStyle = "#120804";
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.fillStyle = s % 2 ? "#f2d7a2" : "#6b3a16";
+    const chunk = 4 + level;
+    ctx.fillRect((x1 + x2) / 2 - chunk / 2, (y1 + y2) / 2 - chunk / 2, chunk, chunk);
+  }
+  ctx.restore();
 }
 
 function paintGround(ctx, theme, cell, px, py, n, full) {
@@ -413,6 +441,23 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
 }
 
 function updateBits(ctx, view, dt) {
+  if (view.blast) {
+    view.blast.life -= dt;
+    const t = 1 - Math.max(0, view.blast.life / view.blast.max);
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, view.blast.life / view.blast.max);
+    ctx.fillStyle = "#ffb15a";
+    ctx.beginPath();
+    ctx.arc(view.blast.x, view.blast.y, 22 + t * 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#2a1208";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(view.blast.x, view.blast.y, 30 + t * 64, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    if (view.blast.life <= 0) view.blast = null;
+  }
   for (let i = view.particles.length - 1; i >= 0; i--) {
     const p = view.particles[i];
     p.life -= dt;
@@ -441,6 +486,28 @@ function updateBits(ctx, view, dt) {
     ctx.fillText(f.text, f.x - 8, f.y);
     ctx.globalAlpha = 1;
   }
+}
+
+function explode(view, tx, ty, theme) {
+  view.shake = 18;
+  const c = tileCenter(tx, ty);
+  const colors = [theme.player.body, theme.player.beak, theme.player.wing, "#ff5a1f", "#1a0c08", theme.ball, theme.danger];
+  for (let i = 0; i < 56; i++) {
+    if (view.particles.length > 320) view.particles.shift();
+    const ang = (i / 56) * Math.PI * 2;
+    const speed = 36 + (i % 5) * 22;
+    view.particles.push({
+      x: c.x,
+      y: c.y,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed,
+      life: 0.55 + (i % 4) * 0.12,
+      max: 1,
+      size: 3 + (i % 4),
+      color: colors[i % colors.length],
+    });
+  }
+  view.blast = { x: c.x, y: c.y, life: 0.42, max: 0.42 };
 }
 
 function burst(view, tx, ty, theme, count) {

@@ -1,6 +1,6 @@
 # kacik
 
-Verze 7. Hra se jmenuje kacik a je určená pro Nokii 301. Displej je na výšku, 240×320 bodů, úhlopříčka 2,4 palce. Telefon nemá dotyk: pohyb je pětičlenný kříž, dvě měkké klávesy a číselnice. V prohlížeči na počítači se hraje jen jako náhled. Rozhraní, písmo i ovládání se posuzují podle téhle obrazovky, ne podle širokého monitoru.
+Verze 8. Hra se jmenuje kacik a je určená pro Nokii 301. Displej je na výšku, 240×320 bodů, úhlopříčka 2,4 palce. Telefon nemá dotyk: pohyb je pětičlenný kříž, dvě měkké klávesy a číselnice. V prohlížeči na počítači se hraje jen jako náhled. Rozhraní, písmo i ovládání se posuzují podle téhle obrazovky, ne podle širokého monitoru.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Dobít se dá v každém krytu, vlastním i soupeřově, pomalu, až na 100 %. Na té stovce se znovu zapne pancíř.
 

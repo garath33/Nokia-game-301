@@ -273,6 +273,7 @@ export function createMatch(opts = {}) {
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
     rock: new Uint8Array(COLS * ROWS),
+    scar: new Uint8Array(COLS * ROWS),
     seen: new Uint8Array(COLS * ROWS),
     lit: new Uint8Array(COLS * ROWS),
     balls: [],
@@ -367,7 +368,7 @@ export function step(match, input, dt) {
     const h = Math.min(left, 1 / 60);
     stepOnce(match, input, h);
     left -= h;
-    if (match.phase !== "play") break;
+    if (match.phase !== "play" && match.phase !== "boom") break;
   }
 }
 
@@ -379,6 +380,11 @@ export function wishFromInput(input) {
 }
 
 function stepOnce(match, input, dt) {
+  if (match.phase === "boom") {
+    match.boomT -= dt;
+    if (match.boomT <= 0) match.phase = match.boomNext;
+    return;
+  }
   if (match.phase !== "play") return;
   match.time += dt;
   match.roundTime += dt;
@@ -685,22 +691,44 @@ function fighterAt(match, b) {
 function resolveDeaths(match) {
   if (match.phase !== "play") return;
   if (match.player.energy <= 0 && match.player.invT <= 0) {
-    match.player.energy = 0;
-    match.player.alive = false;
     match.losses += 1;
-    match.phase = match.losses >= match.winsNeeded ? "over" : "between";
-    if (match.phase === "over") match.victor = "enemy";
-    pushEvent(match, { t: "boom", x: match.player.tx, y: match.player.ty, kind: "player" });
+    const next = match.losses >= match.winsNeeded ? "over" : "between";
+    if (next === "over") match.victor = "enemy";
+    explodeDuck(match, match.player, next);
     return;
   }
   if (match.enemy.energy <= 0 && match.enemy.invT <= 0) {
-    match.enemy.energy = 0;
-    match.enemy.alive = false;
     match.wins += 1;
     match.points += 2;
-    match.phase = match.wins >= match.winsNeeded ? "over" : "shop";
-    if (match.phase === "over") match.victor = "player";
-    pushEvent(match, { t: "boom", x: match.enemy.tx, y: match.enemy.ty, kind: "enemy" });
+    const next = match.wins >= match.winsNeeded ? "over" : "shop";
+    if (next === "over") match.victor = "player";
+    explodeDuck(match, match.enemy, next);
+  }
+}
+
+function explodeDuck(match, f, next) {
+  f.energy = 0;
+  f.alive = false;
+  scarBlast(match, f.tx, f.ty);
+  match.phase = "boom";
+  match.boomT = 1.15;
+  match.boomNext = next;
+  pushEvent(match, { t: "boom", x: f.tx, y: f.ty, kind: f.kind });
+}
+
+function scarBlast(match, cx, cy) {
+  const radius = 4;
+  for (let y = cy - radius; y <= cy + radius; y++) {
+    for (let x = cx - radius; x <= cx + radius; x++) {
+      if (x < 0 || y < 0 || x >= COLS || y >= ROWS) continue;
+      const dist = Math.hypot(x - cx, y - cy);
+      if (dist > radius) continue;
+      const i = y * COLS + x;
+      if (match.type[i] === AIR) continue;
+      const thick = dist < 2.2 ? 3 : dist < 3.4 ? 2 : 1;
+      if (thick > match.scar[i]) match.scar[i] = thick;
+      match.seen[i] = 1;
+    }
   }
 }
 

@@ -424,9 +424,10 @@ function react(before, energy) {
     if (event.t === "boom" && event.kind === "player") audio.lose();
   }
   if (energy < 99.5 && match.player.energy >= 100) audio.tick();
-  if (before === "play" && match.phase === "shop") setMode("offer");
-  if (before === "play" && match.phase === "between") setMode("between");
-  if (before === "play" && match.phase === "over") {
+  const ended = before === "play" || before === "boom";
+  if (ended && match.phase === "shop") setMode("offer");
+  if (ended && match.phase === "between") setMode("between");
+  if (ended && match.phase === "over") {
     if (match.victor === "player") {
       best += 1;
       persist();

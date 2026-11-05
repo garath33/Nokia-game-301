@@ -82,14 +82,14 @@ assert(sand.spent < 3 && rock.spent > 7, "density gap is obvious in one tile");
   const match = createMatch({ seed: 33, difficulty: "normal", winsNeeded: 3 });
   match.enemy.energy = 1;
   strike(match, match.enemy, 50);
-  step(match, idle, 0.05);
+  step(match, idle, 2);
   assert(match.wins === 1 && match.phase === "shop", "a kill is one win and opens the shop");
   match.wins = 2;
   match.enemy.energy = 1;
   match.enemy.hitGrace = 0;
   match.phase = "play";
   strike(match, match.enemy, 50);
-  step(match, idle, 0.05);
+  step(match, idle, 2);
   assert(match.phase === "over" && match.victor === "player", "the chosen length ends the match");
 }
 
