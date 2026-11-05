@@ -1,4 +1,5 @@
 import { createAudio } from "./audio.js";
+import { GAME_NAME, GAME_VERSION } from "./game.js";
 import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
   DIFFICULTIES,
@@ -121,6 +122,7 @@ const keys = { left: false, right: false, up: false, down: false, shoot: false }
 let last = performance.now();
 
 applyTheme();
+brand();
 renderMenu();
 requestAnimationFrame(frame);
 
@@ -302,7 +304,7 @@ function setMode(next) {
   over.classList.toggle("hidden", mode !== "over");
   document.getElementById("touch").classList.toggle("hidden", mode !== "play" && mode !== "pause");
   if (mode === "menu") {
-    status.textContent = "Menu Kačík";
+    status.textContent = `Menu ${GAME_NAME}`;
     renderMenu();
   } else if (mode === "offer") {
     status.textContent = "Volba obchodu";
@@ -481,6 +483,16 @@ function renderOver() {
 
 function applyTheme() {
   document.body.dataset.theme = themeId;
+}
+
+function brand() {
+  const label = `${GAME_NAME} ${GAME_VERSION}`;
+  document.title = GAME_NAME;
+  document.querySelector("#menu h1").textContent = GAME_NAME;
+  document.querySelector("#menu .mast .sub").textContent = `verze ${GAME_VERSION}`;
+  document.querySelector(".poster-title").textContent = GAME_NAME;
+  document.querySelector(".poster-version").textContent = `verze ${GAME_VERSION}`;
+  document.getElementById("splash").setAttribute("aria-label", `${label}. Klepni a pokračuj do menu.`);
 }
 
 function cycleMusic() {
