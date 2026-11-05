@@ -1,0 +1,9 @@
+{
+  "name": "kacik",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/sim.test.js && node tests/experience.test.js",
+    "start": "python3 -m http.server 8765"
+  }
+}
