@@ -6,7 +6,7 @@ Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, panc�
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet.
 
-Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. Hráčova kačenka je žlutá s oranžovým zobákem a při pancíři má stříbrnou helmu, černý průzor a oranžový zobák. Soupeř je vybarvený jako polák: rezavá hlava, černá hruď, světlé tělo, černý zobák s bledým pruhem a červené oko. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí hraje původní osmibitová smyčka, výstřel má vlastní ránu.
+Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. Hráčova kačenka je žlutá s oranžovým zobákem a při pancíři má stříbrnou helmu, černý průzor a oranžový zobák. Soupeř má rezavou hlavu, černou hruď, světlé tělo, černý zobák s bledým pruhem a červené oko. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí hraje původní osmibitová smyčka, výstřel má vlastní ránu.
 
 ## Hraní
 
