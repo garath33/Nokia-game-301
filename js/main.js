@@ -3,6 +3,7 @@ import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
   DIFFICULTIES,
   SHOP,
+  GIFT,
   VICTORY,
   WINS_OPTIONS,
   buy,
@@ -336,7 +337,11 @@ function react(before, energy) {
       audio.hit(event.kind === "player");
       if (event.kind === "player") audio.quack();
     }
-    if (event.t === "boon") audio.boon();
+    if (event.t === "boon") {
+      audio.boon();
+      const what = event.id === "power" ? GIFT.power : GIFT.rate;
+      status.textContent = `${GIFT.line} ${GIFT.name} ${what}`;
+    }
     if (event.t === "boom" && event.kind === "enemy") {
       if (match.phase === "over" && match.victor === "player") audio.triumph();
       else audio.win();

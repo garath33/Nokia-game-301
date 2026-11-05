@@ -11,6 +11,7 @@ import {
   SOIL,
   TILE,
   WALL,
+  GIFT,
   duckLevel,
   fighterPixel,
 } from "./sim.js";
@@ -22,6 +23,7 @@ export function createView() {
     shake: 0,
     particles: [],
     floaters: [],
+    rings: [],
     radar: 0,
     blip: null,
     blipT: 0,
@@ -50,13 +52,17 @@ export function noteEvents(view, match, theme) {
     if (event.t === "shoot") burst(view, event.x, event.y, theme, 2);
     if (event.t === "boon") {
       const pos = tileCenter(event.x, event.y);
+      burst(view, event.x, event.y, theme, 22);
+      view.shake = Math.max(view.shake, 8);
+      view.rings.push({ x: pos.x, y: pos.y, life: 0.7, max: 0.7 });
       view.floaters.push({
         x: pos.x,
-        y: pos.y - 16,
-        text: event.id === "power" ? "PRŮRAZ" : "KADENCE",
-        life: 1.1,
-        max: 1.1,
+        y: pos.y - 22,
+        text: "ZBIJEČKA",
+        life: 1.3,
+        max: 1.3,
         color: theme.good,
+        size: 16,
       });
     }
   }
@@ -113,14 +119,15 @@ export function drawWorld(ctx, w, h, match, theme, view, time, dt) {
   if (enemyVisible(match)) drawDuck(ctx, match.enemy, theme.enemy, theme, time);
   drawDuck(ctx, match.player, theme.player, theme, time);
 
-  updateBits(ctx, view, dt);
+  updateBits(ctx, view, dt, theme);
   ctx.restore();
 
   const ui = screenLayout(w, h);
   drawRadar(ctx, match, theme, view, dt, ui.radar);
   drawHud(ctx, w, h, match, theme, ui);
   drawMarkers(ctx, w, h, match, theme, view);
-  if (match.bannerT > 0) drawBanner(ctx, w, match, theme, ui);
+  if (match.bannerT > 0 && !(match.gifts && match.gifts.length)) drawBanner(ctx, w, match, theme, ui);
+  drawGift(ctx, w, h, match, theme);
 }
 
 export function drawAttract(ctx, w, h, theme, time) {
@@ -374,7 +381,7 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.restore();
 }
 
-function updateBits(ctx, view, dt) {
+function updateBits(ctx, view, dt, theme) {
   for (let i = view.particles.length - 1; i >= 0; i--) {
     const p = view.particles[i];
     p.life -= dt;
@@ -399,8 +406,24 @@ function updateBits(ctx, view, dt) {
     }
     ctx.globalAlpha = Math.max(0, f.life / f.max);
     ctx.fillStyle = f.color;
-    ctx.font = "12px ui-monospace, monospace";
+    ctx.font = `${f.size || 12}px ui-monospace, monospace`;
     ctx.fillText(f.text, f.x - 8, f.y);
+    ctx.globalAlpha = 1;
+  }
+  for (let i = view.rings.length - 1; i >= 0; i--) {
+    const ring = view.rings[i];
+    ring.life -= dt;
+    if (ring.life <= 0) {
+      view.rings.splice(i, 1);
+      continue;
+    }
+    const grow = 1 - ring.life / ring.max;
+    ctx.globalAlpha = ring.life / ring.max;
+    ctx.strokeStyle = theme.good;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, 10 + grow * 46, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
 }
@@ -629,6 +652,41 @@ function drawMarkers(ctx, w, h, match, theme, view) {
   ctx.fillStyle = theme.danger;
   ctx.font = "12px ui-monospace, monospace";
   ctx.fillText("HRABE", mx - 18, my);
+}
+
+function drawGift(ctx, w, h, match, theme) {
+  const gift = match.gifts && match.gifts[0];
+  if (!gift) return;
+  const emerge = Math.min(1, gift.t / 0.2);
+  const fade = gift.t > gift.max - 0.4 ? Math.max(0, (gift.max - gift.t) / 0.4) : 1;
+  const alpha = emerge * fade;
+  const cardW = Math.min(620, w - 36);
+  const cardH = Math.min(250, h * 0.46);
+  const title = cardW < 460 ? 40 : 68;
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.55;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalAlpha = alpha;
+  ctx.translate(w / 2, h / 2);
+  ctx.scale(0.9 + 0.1 * emerge, 0.9 + 0.1 * emerge);
+  ctx.fillStyle = "#120f0b";
+  ctx.fillRect(-cardW / 2, -cardH / 2, cardW, cardH);
+  ctx.strokeStyle = theme.good;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(-cardW / 2 + 2, -cardH / 2 + 2, cardW - 4, cardH - 4);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = theme.text;
+  ctx.font = `${Math.max(16, Math.round(title * 0.32))}px ui-monospace, monospace`;
+  ctx.fillText(GIFT.line, 0, -cardH * 0.28);
+  ctx.fillStyle = theme.good;
+  ctx.font = `bold ${title}px ui-monospace, monospace`;
+  ctx.fillText(GIFT.name, 0, -cardH * 0.02);
+  ctx.fillStyle = theme.text;
+  ctx.font = `${Math.max(16, Math.round(title * 0.3))}px ui-monospace, monospace`;
+  ctx.fillText(gift.id === "power" ? GIFT.power : GIFT.rate, 0, cardH * 0.28);
+  ctx.restore();
 }
 
 function drawBanner(ctx, w, match, theme, ui) {

@@ -32,6 +32,13 @@ export const VICTORY = {
   creed: "Nechť tě kachní síla provází.",
 };
 
+export const GIFT = {
+  line: "Získáváš…",
+  name: "Zbiječku!",
+  power: "Průraz. Ještě příští kolo.",
+  rate: "Kadence. Ještě příští kolo.",
+};
+
 export const SHOT_COST = 8.5;
 export const SHOT_FLOOR = 1;
 export const SHELTER_REGEN = 1.4;
@@ -243,6 +250,7 @@ export function createMatch(opts = {}) {
     upgrades: { power: 0, rate: 0, armor: 0 },
     found: { power: 0, rate: 0 },
     kept: { power: 0, rate: 0 },
+    gifts: [],
     phase: "play",
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
@@ -349,6 +357,11 @@ function stepOnce(match, input, dt) {
   match.roundTime += dt;
   if (match.grace > 0) match.grace = Math.max(0, match.grace - dt);
   if (match.bannerT > 0) match.bannerT = Math.max(0, match.bannerT - dt);
+  const gift = match.gifts[0];
+  if (gift) {
+    gift.t += dt;
+    if (gift.t >= gift.max) match.gifts.shift();
+  }
   const drainOn = match.grace <= 0;
 
   const player = match.player;
@@ -1030,11 +1043,9 @@ function claimBoon(match, f) {
     match.found.rate += 1;
     match.kept.rate += 1;
   }
-  pushEvent(match, { t: "boon", id: power ? "power" : "rate", x: f.tx, y: f.ty });
-  match.banner = power
-    ? "Kachní průraz. Ještě příští kolo."
-    : "Kachní kadence. Ještě příští kolo.";
-  match.bannerT = 2.6;
+  const idName = power ? "power" : "rate";
+  pushEvent(match, { t: "boon", id: idName, x: f.tx, y: f.ty });
+  match.gifts.push({ id: idName, t: 0, max: 2.5 });
 }
 
 function settleBoon(match) {
@@ -1047,6 +1058,7 @@ function carryBoon(match) {
   match.found.rate = match.kept.rate;
   match.kept.power = 0;
   match.kept.rate = 0;
+  match.gifts = [];
 }
 
 function exitBoonSpots(match) {

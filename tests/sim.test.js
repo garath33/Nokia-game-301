@@ -12,6 +12,7 @@ import {
   SHOT_COST,
   SHOT_FLOOR,
   SOIL,
+  GIFT,
   VICTORY,
   WALL,
   densityOf,
@@ -441,6 +442,8 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   }
   assert(match.player.tx === x && match.player.ty === y, "duck lands on the tile");
   assert(match.found.power === 1 && match.boon[id] === 0, "landing grants shot power for this round");
+  assert(match.gifts.length === 1 && match.gifts[0].id === "power", "the find announces itself");
+  assert(GIFT.line === "Získáváš…" && GIFT.name === "Zbiječku!", "the find is named");
   assert(shootingPower(match) === 1 && shootingRate(match) === 0, "tile power is live");
   match.player.moving = false;
   match.player.wish = null;

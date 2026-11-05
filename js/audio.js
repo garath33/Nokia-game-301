@@ -196,8 +196,10 @@ export function createAudio() {
       tone(880, 0.04, "square", 0.03, 880);
     },
     boon() {
-      tone(660, 0.07, "square", 0.05, 880);
-      setTimeout(() => tone(880, 0.09, "square", 0.05, 1180), 70);
+      tone(523, 0.08, "square", 0.05, 659);
+      setTimeout(() => tone(659, 0.08, "square", 0.05, 784), 90);
+      setTimeout(() => tone(784, 0.08, "square", 0.06, 988), 180);
+      setTimeout(() => tone(1046, 0.22, "square", 0.07, 1318), 280);
     },
     win() {
       tone(523, 0.1, "square", 0.05, 523);
