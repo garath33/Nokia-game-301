@@ -220,32 +220,32 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
       ctx.globalAlpha = light < 1 ? 0.55 : 1;
     }
   }
-  if (match.scar && match.scar[i]) drawScar(ctx, x, y, match.scar[i]);
+  if (match.scar && match.scar[i]) drawScar(ctx, x, y, match.scar[i], cell === WALL || cell === ROCK);
   ctx.globalAlpha = 1;
 }
 
-function drawScar(ctx, x, y, level) {
+function drawScar(ctx, x, y, level, hard) {
   const px = x * TILE;
   const py = y * TILE;
   const n = hash(x, y);
   const span = TILE - 6;
-  const streaks = 2 + level;
+  const streaks = (hard ? 3 : 2) + level;
   ctx.save();
   ctx.lineCap = "square";
-  ctx.lineWidth = 2 + level;
+  ctx.lineWidth = (hard ? 3 : 2) + level;
   ctx.globalAlpha = 0.95;
   for (let s = 0; s < streaks; s++) {
     const x1 = px + 3 + ((n >>> (s * 3)) % span);
     const y1 = py + 3 + ((n >>> (s * 3 + 5)) % span);
     const x2 = px + 3 + ((n >>> (s * 3 + 9)) % span);
     const y2 = py + 3 + ((n >>> (s * 3 + 13)) % span);
-    ctx.strokeStyle = "#120804";
+    ctx.strokeStyle = hard ? "#0b0b0d" : "#120804";
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
-    ctx.fillStyle = s % 2 ? "#f2d7a2" : "#6b3a16";
-    const chunk = 4 + level;
+    ctx.fillStyle = hard ? (s % 2 ? "#f4f1ea" : "#e7c56a") : s % 2 ? "#f2d7a2" : "#6b3a16";
+    const chunk = (hard ? 5 : 4) + level;
     ctx.fillRect((x1 + x2) / 2 - chunk / 2, (y1 + y2) / 2 - chunk / 2, chunk, chunk);
   }
   ctx.restore();
@@ -680,7 +680,7 @@ function hudHint(match) {
   const p = match.player;
   if (p.invT > 0) return `I AM INVINCIBLE · ${Math.ceil(p.invT)} s`;
   if (p.jackT > 0) return `Zbíječka · ${Math.ceil(p.jackT)} s. Zem neklade odpor.`;
-  if (p.ghostT > 0) return `GhostDuck · ${Math.ceil(p.ghostT)} s. Kryje střely před tebou.`;
+  if (p.ghostT > 0) return `GhostDuck · ${Math.ceil(p.ghostT)} s. Střílí jako ty a kryje střely.`;
   const onPad = shelterAt(match, p) !== "none";
   if (p.lowPower) return "Málo života na probití. Vrať se do krytu.";
   if (p.digging) return `Probíjíš: ${p.digName}. Střela je rychlejší a žere víc.`;

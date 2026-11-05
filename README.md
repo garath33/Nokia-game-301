@@ -1,8 +1,8 @@
 # kacik
 
-Verze 8. Hra se jmenuje kacik a je určená pro Nokii 301. Displej je na výšku, 240×320 bodů, úhlopříčka 2,4 palce. Telefon nemá dotyk: pohyb je pětičlenný kříž, dvě měkké klávesy a číselnice. V prohlížeči na počítači se hraje jen jako náhled. Rozhraní, písmo i ovládání se posuzují podle téhle obrazovky, ne podle širokého monitoru.
+Verze 9. Hra se jmenuje kacik a je určená pro Nokii 301. Displej je na výšku, 240×320 bodů, úhlopříčka 2,4 palce. Telefon nemá dotyk: pohyb je pětičlenný kříž, dvě měkké klávesy a číselnice. V prohlížeči na počítači se hraje jen jako náhled. Rozhraní, písmo i ovládání se posuzují podle téhle obrazovky, ne podle širokého monitoru.
 
-Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Dobít se dá v každém krytu, vlastním i soupeřově, pomalu, až na 100 %. Na té stovce se znovu zapne pancíř.
+Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Dobít se dá v každém krytu, vlastním i soupeřově, až na 100 %, a v krytu je to o 15 % rychlejší. Na té stovce se znovu zapne pancíř. Kačenky se do sebe zaseknou: soupeř je neprůjezdný jako skála.
 
 Sestřel dá **2 body**. V DuckShopu stojí vylepšení 2 body, GhostDuck a pancíř 4. V mapě je nález zhruba na každých 30 políčkách a každé kolo leží jinde. Hráč začíná každé kolo vlevo, soupeř vpravo.
 
@@ -61,7 +61,8 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 - Zásah bez vylepšení bere 30 % života. Střela stojí 5,1 života.
 - Z krytu se jde ven na všechny čtyři strany. Obě kačenky jsou stejně rychlé, i v pozdějších kolech.
 - Na těžké obtížnosti má soupeř od začátku krátký pancíř. S každým dalším kolem reaguje rychleji, ale neběží rychleji.
-- Čím vyšší hustota, tím dražší hrabání. Skála se míčkem láme na třikrát.
+- Čím vyšší hustota, tím dražší hrabání. Skála se míčkem láme na třikrát. Zásah do skály nebo zdi nechá šrám, i když se kus nepropadne.
+- GhostDuck střílí stejnou dávku jako hráč a stejně rychle. S trojstřelem má tři míčky i průsvitná kačena.
 
 ## Test
 
