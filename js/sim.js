@@ -703,10 +703,20 @@ function resolveDeaths(match) {
   }
 }
 
+export function shelterAt(match, f) {
+  const spot = fighterPixel(f);
+  const x = Math.max(0, Math.min(COLS - 1, Math.floor(spot.x / TILE)));
+  const y = Math.max(0, Math.min(ROWS - 1, Math.floor(spot.y / TILE)));
+  const owner = match.pad[y * COLS + x];
+  const mine = f.kind === "player" ? 1 : 2;
+  const other = mine === 1 ? 2 : 1;
+  if (owner === mine) return "own";
+  if (owner === other) return "enemy";
+  return "none";
+}
+
 function onOwnPad(match, f) {
-  const id = f.ty * COLS + f.tx;
-  const owner = f.kind === "player" ? 1 : 2;
-  return match.pad[id] === owner;
+  return shelterAt(match, f) === "own";
 }
 
 function rearm(match, f) {

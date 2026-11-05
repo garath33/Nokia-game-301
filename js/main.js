@@ -132,6 +132,14 @@ document.getElementById("resume").addEventListener("click", () => {
   if (mode === "pause") setMode("play");
 });
 document.getElementById("to-menu").addEventListener("click", () => setMode("menu"));
+document.getElementById("quit").addEventListener("click", () => {
+  audio.click();
+  match = null;
+  setMode("splash");
+});
+document.getElementById("pause-btn").addEventListener("click", () => {
+  if (mode === "play") setMode("pause");
+});
 document.getElementById("over-menu").addEventListener("click", () => setMode("menu"));
 document.getElementById("next").addEventListener("click", () => continueRound());
 document.getElementById("between-next").addEventListener("click", () => continueRound());
@@ -352,7 +360,12 @@ function setMode(next) {
   between.classList.toggle("hidden", mode !== "between");
   pause.classList.toggle("hidden", mode !== "pause");
   over.classList.toggle("hidden", mode !== "over");
-  document.getElementById("touch").classList.toggle("hidden", mode !== "play" && mode !== "pause");
+  document.getElementById("touch").classList.toggle("hidden", mode !== "play");
+  document.getElementById("pause-btn").classList.toggle("hidden", mode !== "play");
+  if (next !== "play") {
+    keys.shoot = false;
+    releaseStick();
+  }
   if (mode === "menu") {
     status.textContent = `Menu ${GAME_NAME}`;
     renderMenu();
