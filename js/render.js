@@ -171,6 +171,7 @@ export function drawAttract(ctx, w, h, theme, time) {
     time,
     false,
     false,
+    true,
   );
   const bx = originX + TILE + dug * TILE + 18;
   ctx.fillStyle = theme.ball;
@@ -331,7 +332,7 @@ function drawDuck(ctx, f, palette, theme, time) {
   const pct = clamp(f.energy / 100, 0, 1);
   ctx.fillStyle = "rgba(0,0,0,.55)";
   ctx.fillRect(pos.x - 14, pos.y - 30, 28, 4);
-  ctx.fillStyle = pct < 0.3 ? theme.danger : palette.body;
+  ctx.fillStyle = pct < 0.3 ? theme.danger : palette.life || palette.body;
   ctx.fillRect(pos.x - 14, pos.y - 30, 28 * pct, 4);
 }
 
@@ -347,6 +348,13 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.rotate(ang);
   const bob = Math.sin(time * (digging ? 18 : 6)) * (digging ? 1.3 : 0.45);
   ctx.translate(bob, 0);
+  if (armor && !rival) drawRoboDuck(ctx);
+  else if (rival) drawRival(ctx, palette, armor, theme);
+  else drawPlainDuck(ctx, palette, armor, theme);
+  ctx.restore();
+}
+
+function drawPlainDuck(ctx, palette, armor, theme) {
   ctx.lineWidth = palette.rim ? 1.7 : 1.4;
   ctx.strokeStyle = palette.rim || palette.eye;
   ctx.fillStyle = palette.body;
@@ -381,10 +389,6 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.arc(6.4, 0, 4.15, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  if (rival) {
-    ctx.fillStyle = theme.tiles ? "#140814" : "#d01212";
-    ctx.fillRect(3.1, -2.5, 2.5, 5);
-  }
   ctx.fillStyle = palette.beak;
   ctx.beginPath();
   ctx.moveTo(9.2, -2.2);
@@ -399,14 +403,169 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
     ctx.fillStyle = palette.glint;
     ctx.fillRect(6.2, -2.15, 0.7, 0.7);
   }
-  if (armor) {
-    ctx.strokeStyle = theme.shield;
-    ctx.lineWidth = 1.6;
+  if (armor) strokeShield(ctx, theme);
+}
+
+function drawRival(ctx, palette, armor, theme) {
+  const outline = palette.outline || "#16181c";
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  const feathers = [
+    [-4.6, 12.5, -6.2],
+    [4.6, 12.5, 6.2],
+    [0, 16.2, 0],
+  ];
+  for (const [y, len, bend] of feathers) {
     ctx.beginPath();
-    ctx.ellipse(1, 0, 15, 11.5, 0, 0, Math.PI * 2);
+    ctx.moveTo(-6.4, y * 0.28);
+    ctx.quadraticCurveTo(-13, y, -7.2 - len, bend);
+    ctx.lineWidth = 4.1;
+    ctx.strokeStyle = outline;
+    ctx.stroke();
+    ctx.lineWidth = 2.45;
+    ctx.strokeStyle = palette.tail;
     ctx.stroke();
   }
-  ctx.restore();
+
+  ctx.fillStyle = palette.body;
+  ctx.strokeStyle = palette.bodyEdge || outline;
+  ctx.lineWidth = 1.7;
+  ctx.beginPath();
+  ctx.arc(1.4, 0, 9.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = palette.head;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.arc(8.8, 0, 4.7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = palette.eye;
+  ctx.beginPath();
+  ctx.ellipse(9.3, 0.05, 2.55, 1.45, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = palette.head;
+  ctx.fillRect(10.35, -0.45, 1.15, 0.95);
+
+  ctx.fillStyle = palette.beak;
+  ctx.beginPath();
+  ctx.moveTo(12.4, -1.45);
+  ctx.lineTo(16.8, 0.05);
+  ctx.lineTo(12.4, 1.55);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 0.9;
+  ctx.stroke();
+
+  if (armor) strokeShield(ctx, theme);
+}
+
+function drawRoboDuck(ctx) {
+  const suit = "#2a2e34";
+  const suitDeep = "#14171b";
+  const metal = "#cfd3da";
+  const metalHi = "#f4f6f8";
+  const metalLo = "#7e848e";
+  const beak = "#f07812";
+
+  ctx.scale(1.16, 1.16);
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = "#0e1013";
+
+  ctx.fillStyle = suitDeep;
+  ctx.beginPath();
+  ctx.ellipse(-7.6, 0.2, 4.6, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = suit;
+  ctx.beginPath();
+  ctx.ellipse(-0.2, 0.2, 8.5, 6.7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = metal;
+  ctx.strokeStyle = metalLo;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(0.6, side * 6.3, 4.5, 2.4, side * -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = metalHi;
+    ctx.beginPath();
+    ctx.ellipse(-0.2, side * 5.5, 1.5, 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = metal;
+  }
+
+  ctx.fillStyle = metal;
+  ctx.beginPath();
+  ctx.ellipse(1.3, 0.15, 5, 4.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = metalLo;
+  ctx.stroke();
+  ctx.strokeStyle = "#3e444c";
+  ctx.lineWidth = 1.15;
+  ctx.beginPath();
+  ctx.moveTo(-2.3, -1.4);
+  ctx.lineTo(4.5, -1.4);
+  ctx.moveTo(-2.5, 0.55);
+  ctx.lineTo(4.7, 0.55);
+  ctx.moveTo(-1.6, 2.4);
+  ctx.lineTo(3.6, 2.4);
+  ctx.stroke();
+
+  ctx.fillStyle = suitDeep;
+  ctx.fillRect(4.5, -2.5, 2.3, 5);
+
+  const hx = 8.2;
+  ctx.fillStyle = metalLo;
+  ctx.beginPath();
+  ctx.arc(hx, 0.25, 5.55, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = metal;
+  ctx.beginPath();
+  ctx.arc(hx - 0.25, -0.2, 5.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#2a2e34";
+  ctx.lineWidth = 1.25;
+  ctx.stroke();
+  ctx.fillStyle = metalHi;
+  ctx.beginPath();
+  ctx.ellipse(hx - 1.7, -2.35, 2.35, 1.25, -0.45, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#07080a";
+  ctx.fillRect(hx - 5.35, -1.7, 10.3, 2.75);
+  ctx.fillStyle = metalHi;
+  ctx.fillRect(hx - 4.9, -2.25, 9.3, 0.7);
+
+  ctx.fillStyle = beak;
+  ctx.beginPath();
+  ctx.moveTo(hx + 0.2, 0.85);
+  ctx.lineTo(hx + 8.5, 1.6);
+  ctx.lineTo(hx + 0.6, 3.75);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#c85a08";
+  ctx.beginPath();
+  ctx.moveTo(hx + 0.4, 2.25);
+  ctx.lineTo(hx + 7.5, 2.5);
+  ctx.lineTo(hx + 0.6, 3.7);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function strokeShield(ctx, theme) {
+  ctx.strokeStyle = theme.shield;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.ellipse(1, 0, 15, 11.5, 0, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 function updateBits(ctx, view, dt) {
