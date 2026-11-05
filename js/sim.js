@@ -58,7 +58,8 @@ export function densityOf(cell) {
 
 export const PACE = 0.8;
 export const WALK = 0.8;
-export const REGEN_BOOST = 1.69;
+// Shelter refill, another 15% on top of the previous bunker rate.
+export const REGEN_BOOST = 1.69 * 1.15;
 
 const ARMOR_TIME = [0, 20, 36];
 const ARMOR_ABSORB = [0, 0.65, 0.8];
@@ -172,7 +173,7 @@ export const SHOP = [
     max: 1,
     kind: "charge",
     name: "GhostDuck",
-    blurb: "40 s. Průsvitná kačena před tebou střílí a schytá střely.",
+    blurb: "40 s. Střílí stejnou dávku jako ty, stejně rychle, a schytá střely.",
   },
   {
     id: "laser",
@@ -448,8 +449,15 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
     if (f.mt >= 1) {
       f.mt = 1;
       f.moving = false;
-      f.tx = f.bx;
-      f.ty = f.by;
+      if (duckBlocks(match, f, f.bx, f.by)) {
+        f.tx = f.ax;
+        f.ty = f.ay;
+      } else {
+        f.tx = f.bx;
+        f.ty = f.by;
+      }
+      f.bx = f.tx;
+      f.by = f.ty;
     }
   } else if (f.wish != null) {
     tryMoveOrDig(match, f, dt, speedMul);
@@ -469,6 +477,12 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   const ny = f.ty + d.y;
   if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) {
     f.digging = false;
+    return;
+  }
+  if (duckInWay(match, f, nx, ny, d)) {
+    f.digging = false;
+    f.digT = 0;
+    f.lowPower = false;
     return;
   }
   const id = ny * COLS + nx;
@@ -560,7 +574,7 @@ function tryShoot(match, f) {
   for (const facing of facings) pushBall(match, f, facing, pos, speed, power, radius, laser);
   if (f.kind === "player" && f.ghostT > 0) {
     const spot = ghostSpot(f);
-    pushBall(match, f, f.facing, spot, speed, power, radius, laser);
+    for (const facing of facings) pushBall(match, f, facing, spot, speed, power, radius, laser);
   }
   pushEvent(match, { t: "shoot", x: f.tx, y: f.ty, kind: f.kind });
   if (f.kind === "player") match.noise = { x: f.tx, y: f.ty, ttl: 1.6, kind: "player" };
@@ -652,11 +666,16 @@ function updateBalls(match, dt) {
 }
 
 function chew(match, b, tx, ty, cell, id) {
-  if (cell === WALL) return true;
+  if (cell === WALL) {
+    nick(match, tx, ty, 2);
+    pushEvent(match, { t: "chip", x: tx, y: ty });
+    return true;
+  }
   const info = DIG[cell];
   if (!info) return false;
   if (cell === ROCK) {
     match.rock[id] -= b.rockDmg || 1;
+    nick(match, tx, ty, 2);
     pushEvent(match, { t: "chip", x: tx, y: ty });
     if (match.rock[id] <= 0) {
       clearCell(match, tx, ty);
@@ -730,6 +749,35 @@ function scarBlast(match, cx, cy) {
       match.seen[i] = 1;
     }
   }
+}
+
+function nick(match, tx, ty, amount) {
+  const i = ty * COLS + tx;
+  const next = Math.min(3, match.scar[i] + amount);
+  if (next > match.scar[i]) match.scar[i] = next;
+  match.seen[i] = 1;
+}
+
+function otherDuck(match, f) {
+  const other = f.kind === "player" ? match.enemy : match.player;
+  if (!other || (!other.alive && other.invT <= 0)) return null;
+  return other;
+}
+
+function duckBlocks(match, f, x, y) {
+  const other = otherDuck(match, f);
+  if (!other) return false;
+  if (other.tx === x && other.ty === y) return true;
+  return other.moving && other.bx === x && other.by === y;
+}
+
+function duckInWay(match, f, nx, ny, d) {
+  if (duckBlocks(match, f, nx, ny)) return true;
+  if (d.x && d.y) {
+    if (duckBlocks(match, f, f.tx + d.x, f.ty)) return true;
+    if (duckBlocks(match, f, f.tx, f.ty + d.y)) return true;
+  }
+  return false;
 }
 
 export function shelterAt(match, f) {

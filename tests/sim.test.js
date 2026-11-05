@@ -589,6 +589,78 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   match.player.energy = 90;
   step(match, { ...idle, shoot: true }, 0.05);
   assert(match.rock[rock] === 1, `laser bite is 2 (${match.rock[rock]})`);
+  assert(match.scar[rock] >= 2, "a rock that stays keeps a shrapnel scar");
+}
+
+{
+  const match = createMatch({ seed: 31, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.player.ghostT = 12;
+  match.player.facing = 2;
+  match.player.moving = false;
+  match.upgrades.spread = 1;
+  match.player.energy = 80;
+  match.player.cool = 0;
+  const x = match.player.tx;
+  const y = match.player.ty;
+  for (let i = 1; i <= 6; i++) {
+    match.type[y * COLS + (x + i)] = AIR;
+    match.pad[y * COLS + (x + i)] = 0;
+  }
+  const before = match.player.energy;
+  step(match, { ...idle, shoot: true }, 0.05);
+  close(before - match.player.energy, SHOT_COST, 0.05, "ghost shares the shot cost");
+  assert(match.balls.length === 6, `ghost copies the triple volley (${match.balls.length})`);
+  const speeds = match.balls.map((ball) => Math.hypot(ball.vx, ball.vy));
+  assert(speeds.every((speed) => Math.abs(speed - 360) < 0.01), "ghost balls fly at the same speed");
+}
+
+{
+  const match = createMatch({ seed: 32, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  const x = 20;
+  const y = 20;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const i = (y + dy) * COLS + (x + dx);
+      match.type[i] = AIR;
+      match.pad[i] = 0;
+      match.seen[i] = 1;
+    }
+  }
+  match.player.tx = x;
+  match.player.ty = y;
+  match.player.ax = x;
+  match.player.ay = y;
+  match.player.bx = x;
+  match.player.by = y;
+  match.player.moving = false;
+  match.player.energy = 80;
+  match.enemy.tx = x + 1;
+  match.enemy.ty = y;
+  match.enemy.ax = x + 1;
+  match.enemy.ay = y;
+  match.enemy.bx = x + 1;
+  match.enemy.by = y;
+  match.enemy.moving = false;
+  match.enemy.energy = 80;
+  step(match, { ...idle, right: true }, 0.9);
+  assert(match.player.tx === x && match.player.ty === y && !match.player.moving, "ducks jam instead of overlapping");
+  step(match, { ...idle, left: true }, 0.22);
+  assert(match.player.tx === x - 1 && match.player.ty === y, "a duck can still back away");
+  match.player.tx = x;
+  match.player.ty = y;
+  match.player.moving = false;
+  match.type[y * COLS + (x + 1)] = WALL;
+  match.player.cool = 0;
+  match.player.energy = 70;
+  match.player.facing = 2;
+  step(match, { ...idle, shoot: true }, 0.05);
+  step(match, idle, 0.35);
+  assert(match.type[y * COLS + (x + 1)] === WALL, "the wall stays");
+  assert(match.scar[y * COLS + (x + 1)] >= 2, "shrapnel marks a wall");
 }
 
 if (failed) {
