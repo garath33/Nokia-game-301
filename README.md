@@ -43,6 +43,17 @@ Když už jedna kopie běží, druhý start ji nespouští znovu a jen zopakuje 
 
 Na stránce musí být stejné číslo verze jako v terminálu. Server posílá stránku bez uložení do mezipaměti, takže po obnovení vidíš kód, který právě běží.
 
+## Pixel 8
+
+Samostatná aplikace pro Android to není. Na telefonu se hraje v Chromu. Počítač, na kterém běží `python3 serve.py`, a Pixel musí být na stejné Wi-Fi. Mobilní data a hostovská Wi-Fi, která zařízení mezi sebou nepouští, na to nestačí.
+
+1. Na počítači ve složce hry spusť `python3 serve.py` a terminál nech zapnutý.
+2. Vypíše dvě adresy. `http://127.0.0.1:8765` je jen pro ten počítač. Druhá, ve tvaru `http://192.168.x.x:8765`, je pro telefon.
+3. Na Pixelu otevři Chrome a zadej tu druhou adresu. Když se Windows zeptá, jestli smí Python přijímat spojení v soukromé síti, povol to.
+4. Klepni na úvodní obrazovku a pak na HRÁT. V zápasu jsou dole šipky a tlačítko střelby.
+
+Vypnutí na počítači (`python3 serve.py stop`) telefon od hry odpojí. Nová verze se na Pixelu načte stejně jako na počítači: stop, nový kód, start, a v Chromu obnovení stránky.
+
 Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu (zapnuto, potichu, vypnuto). Rány mají v menu vlastní tlačítko. Esc je pauza.
 
 V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (tyrkys, fialová, laserová červeň).

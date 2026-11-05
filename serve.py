@@ -96,6 +96,31 @@ def address():
     return f"http://127.0.0.1:{PORT}"
 
 
+def phone_addresses():
+    found = []
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.connect(("8.8.8.8", 80))
+        ip = sock.getsockname()[0]
+        sock.close()
+    except OSError:
+        ip = ""
+    if ip and not ip.startswith("127."):
+        found.append(f"http://{ip}:{PORT}")
+    return found
+
+
+def print_addresses():
+    print(f"Na tomto počítači: {address()}")
+    phones = phone_addresses()
+    if phones:
+        print("Na Pixelu ve stejné Wi-Fi otevři:")
+        for url in phones:
+            print(url)
+    else:
+        print("Adresu pro telefon se nepodařilo zjistit. Počítač a Pixel musí být na stejné Wi-Fi.")
+
+
 def responds():
     try:
         with urllib.request.urlopen(address() + "/", timeout=1) as response:
@@ -130,7 +155,7 @@ def stop():
 def status():
     if responds():
         print(f"kacik verze {version()} běží.")
-        print(f"Otevři v prohlížeči na tom samém počítači: {address()}")
+        print_addresses()
         return 0
     print(f"kacik neběží. Spusť ho příkazem: python3 serve.py")
     return 1
@@ -141,17 +166,16 @@ def serve():
     if not port_is_free(PORT):
         if responds():
             print(f"kacik verze {version()} už běží.")
-            print(f"Otevři přesně tuhle adresu: {address()}")
+            print_addresses()
             print("Jiný port, třeba 18765, hra nepoužívá.")
             print("Novou verzi pustíš takto: python3 serve.py restart")
             return 0
         print(f"Port {PORT} je obsazený něčím jiným. Hra se nespustila.")
         return 1
 
-    url = address()
     print(f"kacik verze {version()} běží.")
     print("Terminál nech zapnutý. Vypnutí: Ctrl+C, nebo v druhém okně python3 serve.py stop")
-    print(f"V prohlížeči na tom samém počítači otevři: {url}")
+    print_addresses()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     try:
         server.serve_forever()

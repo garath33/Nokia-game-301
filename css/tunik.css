@@ -311,7 +311,7 @@ button:disabled {
   z-index: 3;
 }
 
-.touch button { padding: 0; font-size: 18px; }
+.touch button { padding: 0; font-size: 18px; touch-action: none; }
 .touch .blank { visibility: hidden; }
 #fire {
   grid-column: 3;
