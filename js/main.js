@@ -217,17 +217,66 @@ window.addEventListener("keyup", (event) => {
   if (setKey(event.code, false)) event.preventDefault();
 });
 window.addEventListener("blur", () => {
-  keys.left = keys.right = keys.up = keys.down = keys.shoot = false;
+  keys.shoot = false;
+  releaseStick();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && mode === "play") setMode("pause");
 });
 
-bindHold(document.getElementById("up"), "up");
-bindHold(document.getElementById("down"), "down");
-bindHold(document.getElementById("left"), "left");
-bindHold(document.getElementById("right"), "right");
 bindHold(document.getElementById("fire"), "shoot");
+bindStick(document.getElementById("stick"));
+
+function bindStick(stick) {
+  const knob = stick.querySelector(".stick-knob");
+  const place = (x, y) => {
+    knob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+  };
+  const apply = (event) => {
+    const rect = stick.getBoundingClientRect();
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const limit = rect.width * 0.32;
+    const dist = Math.hypot(dx, dy);
+    if (dist < limit * 0.22) {
+      releaseStick();
+      return;
+    }
+    const scale = Math.min(limit, dist) / dist;
+    place(dx * scale, dy * scale);
+    const nx = dx / dist;
+    const ny = dy / dist;
+    const slice = 0.4;
+    keys.right = nx > slice;
+    keys.left = nx < -slice;
+    keys.down = ny > slice;
+    keys.up = ny < -slice;
+  };
+  stick.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    stick.setPointerCapture(event.pointerId);
+    audio.resume();
+    apply(event);
+  });
+  stick.addEventListener("pointermove", (event) => {
+    if (!stick.hasPointerCapture(event.pointerId)) return;
+    event.preventDefault();
+    apply(event);
+  });
+  const end = (event) => {
+    if (!stick.hasPointerCapture(event.pointerId)) return;
+    stick.releasePointerCapture(event.pointerId);
+    releaseStick();
+  };
+  stick.addEventListener("pointerup", end);
+  stick.addEventListener("pointercancel", end);
+  releaseStick.place = place;
+}
+
+function releaseStick() {
+  keys.left = keys.right = keys.up = keys.down = false;
+  if (releaseStick.place) releaseStick.place(0, 0);
+}
 
 function bindHold(node, name) {
   const on = (event) => {

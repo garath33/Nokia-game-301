@@ -96,29 +96,9 @@ def address():
     return f"http://127.0.0.1:{PORT}"
 
 
-def phone_addresses():
-    found = []
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.connect(("8.8.8.8", 80))
-        ip = sock.getsockname()[0]
-        sock.close()
-    except OSError:
-        ip = ""
-    if ip and not ip.startswith("127."):
-        found.append(f"http://{ip}:{PORT}")
-    return found
-
-
 def print_addresses():
-    print(f"Na tomto počítači: {address()}")
-    phones = phone_addresses()
-    if phones:
-        print("Na Pixelu ve stejné Wi-Fi otevři:")
-        for url in phones:
-            print(url)
-    else:
-        print("Adresu pro telefon se nepodařilo zjistit. Počítač a Pixel musí být na stejné Wi-Fi.")
+    print(f"Jen na tomto počítači: {address()}")
+    print("Server poslouchá jen tady, ne na celé síti.")
 
 
 def responds():
@@ -176,7 +156,7 @@ def serve():
     print(f"kacik verze {version()} běží.")
     print("Terminál nech zapnutý. Vypnutí: Ctrl+C, nebo v druhém okně python3 serve.py stop")
     print_addresses()
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
+    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

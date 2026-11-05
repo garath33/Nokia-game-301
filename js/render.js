@@ -578,16 +578,17 @@ function drawHud(ctx, w, h, match, theme, ui) {
   const hint = hudHint(match);
   ctx.font = ui.narrow ? "12px ui-monospace, monospace" : "13px ui-monospace, monospace";
   const width = Math.min(w - 20, Math.max(ui.narrow ? 120 : 280, ctx.measureText(hint).width + 24));
+  const hintTop = h - (ui.narrow ? 226 : 48);
   ctx.fillStyle = theme.panel;
-  ctx.fillRect(14, h - 48, width, 32);
+  ctx.fillRect(14, hintTop, width, 32);
   ctx.strokeStyle = theme.line;
-  ctx.strokeRect(15, h - 47, width - 2, 30);
+  ctx.strokeRect(15, hintTop + 1, width - 2, 30);
   ctx.save();
   ctx.beginPath();
-  ctx.rect(20, h - 46, width - 16, 28);
+  ctx.rect(20, hintTop + 2, width - 16, 28);
   ctx.clip();
   ctx.fillStyle = theme.text;
-  ctx.fillText(hint, 26, h - 27);
+  ctx.fillText(hint, 26, hintTop + 21);
   ctx.restore();
 }
 
@@ -623,7 +624,7 @@ function hudHint(match) {
   }
   if (onPad) return "Kryt je plný. Můžeš zase ven.";
   if (p.energy < 34) return "Život dochází. Šipka K vede do tvého krytu.";
-  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. M mění hudbu.";
+  if (match.roundTime < 18) return "Knipl nebo šipky hrabou. Kulaté tlačítko a mezerník střílí.";
   return "Život ubývá pořád. Soupeř tě hledá stejně, jako ty jeho.";
 }
 
@@ -633,7 +634,7 @@ function drawMarkers(ctx, w, h, match, theme, view) {
   const sy = home.y - view.camY;
   if (!(sx > 40 && sy > 40 && sx < w - 40 && sy < h - 40)) {
     const cx = clamp(sx, 36, w - 36);
-    const cy = clamp(sy, 140, h - 70);
+    const cy = clamp(sy, 140, h - (w < 760 ? 230 : 70));
     ctx.strokeStyle = theme.good;
     ctx.beginPath();
     ctx.arc(cx, cy, 12, 0, Math.PI * 2);
@@ -647,7 +648,7 @@ function drawMarkers(ctx, w, h, match, theme, view) {
     const rx = (match.rumor.x + 0.5) * TILE - view.camX;
     const ry = (match.rumor.y + 0.5) * TILE - view.camY;
     const mx = clamp(rx, 28, w - 190);
-    const my = clamp(ry, 140, h - 70);
+    const my = clamp(ry, 140, h - (w < 760 ? 230 : 70));
     ctx.fillStyle = theme.danger;
     ctx.font = "12px ui-monospace, monospace";
     ctx.fillText("HRABE", mx - 18, my);
@@ -663,7 +664,7 @@ function drawShotCue(ctx, w, h, match, theme, view) {
   const left = 28;
   const top = 150;
   const right = w - 28;
-  const bottom = h - 72;
+  const bottom = h - (w < 760 ? 230 : 72);
   const on = rx >= left && rx <= right && ry >= top && ry <= bottom;
   const mx = clamp(rx, left, right);
   const my = clamp(ry, top, bottom);
