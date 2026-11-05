@@ -1,55 +1,158 @@
 #!/usr/bin/env python3
-"""Náhled hry kacik v okně prohlížeče. npm k tomu není potřeba."""
+"""Spouštění a vypínání náhledu hry kacik.
+
+Příkazy:
+  python3 serve.py           spustí hru a nechá ji běžet
+  python3 serve.py stop      vypne hru na portu 8765
+  python3 serve.py restart   vypne ji a hned spustí znovu
+  python3 serve.py status    napíše, jestli běží a na jaké adrese
+"""
 
 import os
+import re
+import signal
 import socket
 import sys
+import time
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-FIRST_PORT = 8765
+PORT = 8765
+
+
+class Handler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
+
+def version():
+    path = os.path.join(ROOT, "js", "game.js")
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return "?"
+    match = re.search(r"GAME_VERSION\s*=\s*(\d+)", text)
+    return match.group(1) if match else "?"
 
 
 def port_is_free(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    # Po starém spojení zůstává port chvíli ve stavu TIME_WAIT a bind by selhal,
+    # i když už hra neposlouchá. Poslouchající proces je spolehlivější.
+    return not pids_on_port(port)
+
+
+def pids_on_port(port):
+    """Najde proces, který na portu poslouchá. Bez příkazu ss, jen přes /proc."""
+    hexport = f"{port:04X}"
+    inodes = set()
+    for name in ("/proc/net/tcp", "/proc/net/tcp6"):
         try:
-            sock.bind(("0.0.0.0", port))
+            rows = open(name, encoding="utf-8").read().splitlines()[1:]
         except OSError:
-            return False
-    return True
+            continue
+        for row in rows:
+            parts = row.split()
+            local, state, inode = parts[1], parts[3], parts[9]
+            if local.rsplit(":", 1)[-1].upper() == hexport and state == "0A":
+                inodes.add(inode)
+    if not inodes:
+        return []
+    found = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        fd_dir = f"/proc/{entry}/fd"
+        try:
+            descriptors = os.listdir(fd_dir)
+        except OSError:
+            continue
+        for descriptor in descriptors:
+            try:
+                target = os.readlink(f"{fd_dir}/{descriptor}")
+            except OSError:
+                continue
+            if target.startswith("socket:[") and target[8:-1] in inodes:
+                found.append(int(entry))
+                break
+    return found
 
 
-def game_already_running(port):
+def command_of(pid):
     try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=1) as response:
+        raw = open(f"/proc/{pid}/cmdline", "rb").read()
+    except OSError:
+        return ""
+    return raw.replace(b"\0", b" ").decode("utf-8", "replace")
+
+
+def game_pid(pid):
+    command = command_of(pid)
+    return "serve.py" in command or "http.server" in command
+
+
+def address():
+    return f"http://127.0.0.1:{PORT}"
+
+
+def responds():
+    try:
+        with urllib.request.urlopen(address() + "/", timeout=1) as response:
             page = response.read(8000).decode("utf-8", "replace").lower()
     except Exception:
         return False
     return "kacik" in page
 
 
-def main():
-    os.chdir(ROOT)
-    if not port_is_free(FIRST_PORT) and game_already_running(FIRST_PORT):
-        print("Hra už běží. Druhý server nespouštěj.")
-        print(f"Otevři v prohlížeči: http://127.0.0.1:{FIRST_PORT}")
+def stop():
+    pids = [pid for pid in pids_on_port(PORT) if game_pid(pid)]
+    if not pids and port_is_free(PORT):
+        print(f"kacik neběží. Port {PORT} je volný.")
         return 0
+    if not pids:
+        print(f"Port {PORT} drží jiný program. Hru jsem nevypnul.")
+        return 1
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass
+    for _ in range(20):
+        if port_is_free(PORT):
+            print(f"kacik je vypnutý. Port {PORT} je volný.")
+            return 0
+        time.sleep(0.1)
+    print(f"kacik se nepodařilo vypnout. Port {PORT} je pořád obsazený.")
+    return 1
 
-    port = None
-    for candidate in range(FIRST_PORT, FIRST_PORT + 20):
-        if port_is_free(candidate):
-            port = candidate
-            break
-    if port is None:
-        print("Volný port se nenašel. Zavři staré okno se serverem a zkus to znovu.")
+
+def status():
+    if responds():
+        print(f"kacik verze {version()} běží.")
+        print(f"Otevři v prohlížeči na tom samém počítači: {address()}")
+        return 0
+    print(f"kacik neběží. Spusť ho příkazem: python3 serve.py")
+    return 1
+
+
+def serve():
+    os.chdir(ROOT)
+    if not port_is_free(PORT):
+        if responds():
+            print(f"kacik verze {version()} už běží.")
+            print(f"Otevři přesně tuhle adresu: {address()}")
+            print("Jiný port, třeba 18765, hra nepoužívá.")
+            print("Novou verzi pustíš takto: python3 serve.py restart")
+            return 0
+        print(f"Port {PORT} je obsazený něčím jiným. Hra se nespustila.")
         return 1
 
-    url = f"http://127.0.0.1:{port}"
-    print("kacik běží. Tohle okno terminálu nech zapnuté.")
-    print(f"Hru otevři v prohlížeči: {url}")
-    print("Vypneš to klávesami Ctrl+C.")
-    server = ThreadingHTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    url = address()
+    print(f"kacik verze {version()} běží.")
+    print("Terminál nech zapnutý. Vypnutí: Ctrl+C, nebo v druhém okně python3 serve.py stop")
+    print(f"V prohlížeči na tom samém počítači otevři: {url}")
+    server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -59,5 +162,22 @@ def main():
     return 0
 
 
+def main(argv):
+    command = argv[1] if len(argv) > 1 else "start"
+    if command in ("start",):
+        return serve()
+    if command == "stop":
+        return stop()
+    if command == "status":
+        return status()
+    if command == "restart":
+        stopped = stop()
+        if stopped != 0:
+            return stopped
+        return serve()
+    print("Neznámý příkaz. Použij: python3 serve.py [start|stop|restart|status]")
+    return 2
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv))

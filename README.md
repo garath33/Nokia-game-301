@@ -12,19 +12,36 @@ Mapa je ve vlnitých vrstvách: písek 1, hlína 2, jíl 4, štěrk 6, skála 9.
 
 ## Hraní na počítači
 
-Hra nemá vlastní okno programu. Otevře se v prohlížeči.
+Hra nemá vlastní okno programu. Běží v prohlížeči, a jen na tom počítači, kde jsi spustil příkaz níž. Adresa `127.0.0.1` v prohlížeči znamená „tento počítač“. Když příkaz běží ve vzdáleném terminálu Cursoru a prohlížeč máš na svém PC, stránka se neotevře a Chrome napíše, že web odmítl připojení.
 
-Ve složce hry spusť:
+Hra poslouchá jen na portu **8765**. Adresa je vždy:
+
+`http://127.0.0.1:8765`
+
+Port 18765 hra nepoužívá. Na něm prohlížeč spojení odmítne.
+
+Ve složce hry, v terminálu na svém počítači:
 
 ```bash
+python3 serve.py status
+python3 serve.py stop
 python3 serve.py
 ```
 
-Příkaz vypíše adresu, obvykle `http://127.0.0.1:8765`. Tu zadej do Chromu, Firefoxu nebo Edge. Terminál nech běžet, hra v něm stojí. Vypne se klávesami Ctrl+C.
+`status` řekne, jestli hra běží. `stop` ji vypne a uvolní port. Poslední příkaz ji spustí a vypíše adresu i číslo verze. Terminál nech otevřený. V Chromu, Firefoxu nebo Edge otevři přesně vypsanou adresu. Vypnutí je Ctrl+C v tom terminálu, nebo v druhém okně `python3 serve.py stop`.
 
-Když terminál napíše, že adresa už je obsazená (`Address already in use`), server už běží. Druhý start není potřeba, stačí otevřít tu adresu v prohlížeči.
+Když už jedna kopie běží, druhý start ji nespouští znovu a jen zopakuje adresu. `npm` k tomu není potřeba. Když ho máš, `npm start` dělá totéž co `python3 serve.py`.
 
-`npm start` dělá totéž. V novém terminálu ale npm někdy není vidět a napíše `npm: command not found`. `python3 serve.py` npm nepotřebuje.
+## Nová verze
+
+Číslo verze je v `js/game.js` (`GAME_VERSION`). Při startu ho terminál vypíše a stejné číslo je na úvodní obrazovce.
+
+1. `python3 serve.py stop`
+2. Vezmi nový kód (`git pull`, nebo nech doběhnout úpravu ve složce).
+3. `python3 serve.py`
+4. Otevři `http://127.0.0.1:8765` a obnov stránku klávesami Ctrl+F5.
+
+Na stránce musí být stejné číslo verze jako v terminálu. Server posílá stránku bez uložení do mezipaměti, takže po obnovení vidíš kód, který právě běží.
 
 Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu (zapnuto, potichu, vypnuto). Rány mají v menu vlastní tlačítko. Esc je pauza.
 

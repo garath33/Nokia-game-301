@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node tests/sim.test.js && node tests/experience.test.js",
-    "start": "python3 serve.py"
+    "start": "python3 serve.py",
+    "stop": "python3 serve.py stop",
+    "restart": "python3 serve.py restart"
   }
 }
