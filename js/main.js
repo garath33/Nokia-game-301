@@ -14,16 +14,24 @@ import {
 
 const CLASSIC_DUCK = { body: "#ffd000", wing: "#f2a400", beak: "#ff7a00", eye: "#2b1608" };
 const RIVAL_DUCK = {
-  body: "#e3dfd4",
-  wing: "#6d6a64",
-  beak: "#141414",
-  beakBand: "#e6e1d4",
-  eye: "#e10600",
-  head: "#b8431c",
-  crown: "#7a2a10",
-  breast: "#161311",
-  tail: "#1b1714",
-  life: "#d15a28",
+  body: "#d5d8de",
+  bodyEdge: "#8d939c",
+  head: "#f7f8fa",
+  eye: "#6e1420",
+  beak: "#f07812",
+  tail: "#2a2f36",
+  outline: "#16181c",
+  life: "#6e1420",
+};
+const RIVAL_DUCK_CYBER = {
+  body: "#f2f2f2",
+  bodyEdge: "#6e6e6e",
+  head: "#ffffff",
+  eye: "#111111",
+  beak: "#1a1a1a",
+  tail: "#111111",
+  outline: "#000000",
+  life: "#f4f4f4",
 };
 
 const THEMES = {
@@ -62,7 +70,7 @@ const THEMES = {
     glow: false,
     glowA: "#3dffe8",
     glowB: "#ff2a55",
-    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#b8431c", "#e3dfd4"],
+    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#d5d8de", "#6e1420"],
   },
   cyber: {
     id: "cyber",
@@ -80,7 +88,7 @@ const THEMES = {
     crack: "#ff2a55",
     mote: "#d46bff",
     player: CLASSIC_DUCK,
-    enemy: RIVAL_DUCK,
+    enemy: RIVAL_DUCK_CYBER,
     sand: ["#6a4a98", "#7c5aaa", "#543880"],
     gravel: ["#243044", "#1a2838", "#314258"],
     ball: "#b8fff8",
@@ -99,7 +107,7 @@ const THEMES = {
     glow: true,
     glowA: "rgba(61,255,232,.85)",
     glowB: "rgba(255,42,85,.8)",
-    swatch: ["#241244", "#3dffe8", "#ffd000", "#b8431c", "#e3dfd4"],
+    swatch: ["#241244", "#3dffe8", "#ffd000", "#f2f2f2", "#111111"],
   },
 };
 
