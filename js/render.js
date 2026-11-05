@@ -289,7 +289,7 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   const bob = Math.sin(time * (digging ? 18 : 6)) * (digging ? 1.3 : 0.45);
   ctx.translate(bob, 0);
   if (armor && !rival) drawRoboDuck(ctx);
-  else if (rival) drawPochard(ctx, palette, armor, theme);
+  else if (rival) drawRival(ctx, palette, armor, theme);
   else drawPlainDuck(ctx, palette, armor, theme);
   ctx.restore();
 }
@@ -331,79 +331,61 @@ function drawPlainDuck(ctx, palette, armor, theme) {
   if (armor) strokeShield(ctx, theme);
 }
 
-function drawPochard(ctx, palette, armor, theme) {
-  const tail = palette.tail || "#1b1714";
-  const breast = palette.breast || "#161311";
-  const head = palette.head || "#b8431c";
-  ctx.lineWidth = 1.25;
-  ctx.strokeStyle = "#1a120e";
+function drawRival(ctx, palette, armor, theme) {
+  const outline = palette.outline || "#16181c";
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
-  ctx.fillStyle = tail;
-  ctx.beginPath();
-  ctx.ellipse(-7.3, 0.2, 4.5, 3.3, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+  const feathers = [
+    [-4.6, 12.5, -6.2],
+    [4.6, 12.5, 6.2],
+    [0, 16.2, 0],
+  ];
+  for (const [y, len, bend] of feathers) {
+    ctx.beginPath();
+    ctx.moveTo(-6.4, y * 0.28);
+    ctx.quadraticCurveTo(-13, y, -7.2 - len, bend);
+    ctx.lineWidth = 4.1;
+    ctx.strokeStyle = outline;
+    ctx.stroke();
+    ctx.lineWidth = 2.45;
+    ctx.strokeStyle = palette.tail;
+    ctx.stroke();
+  }
 
   ctx.fillStyle = palette.body;
+  ctx.strokeStyle = palette.bodyEdge || outline;
+  ctx.lineWidth = 1.7;
   ctx.beginPath();
-  ctx.ellipse(0.4, 0.3, 8.3, 6.1, 0, 0, Math.PI * 2);
+  ctx.arc(1.4, 0, 9.4, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = palette.wing;
+  ctx.fillStyle = palette.head;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
-  ctx.ellipse(-0.6, -0.8, 5.4, 2.5, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = tail;
-  ctx.beginPath();
-  ctx.ellipse(-3.6, 2.5, 3.5, 1.9, 0.45, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = breast;
-  ctx.beginPath();
-  ctx.ellipse(5.1, 0.5, 3.7, 4.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = head;
-  ctx.beginPath();
-  ctx.arc(7.7, -0.5, 4.35, 0, Math.PI * 2);
+  ctx.arc(8.8, 0, 4.7, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = palette.crown || "#7a2a10";
-  ctx.beginPath();
-  ctx.ellipse(7.2, -2.5, 2.7, 1.7, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = palette.beak;
-  ctx.beginPath();
-  ctx.moveTo(10.4, -1.55);
-  ctx.lineTo(17.1, 0.15);
-  ctx.lineTo(10.4, 1.9);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = palette.beakBand || "#e6e1d4";
-  ctx.beginPath();
-  ctx.moveTo(13.5, -0.7);
-  ctx.lineTo(15.4, -0.1);
-  ctx.lineTo(13.5, 0.75);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = palette.beak;
-  ctx.beginPath();
-  ctx.moveTo(15.15, -0.35);
-  ctx.lineTo(17.1, 0.15);
-  ctx.lineTo(15.15, 0.65);
-  ctx.closePath();
-  ctx.fill();
 
   ctx.fillStyle = palette.eye;
   ctx.beginPath();
-  ctx.arc(8.9, -1.15, 1.15, 0, Math.PI * 2);
+  ctx.ellipse(9.3, 0.05, 2.55, 1.45, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#2a0808";
+  ctx.fillStyle = palette.head;
+  ctx.fillRect(10.35, -0.45, 1.15, 0.95);
+
+  ctx.fillStyle = palette.beak;
   ctx.beginPath();
-  ctx.arc(9.25, -1.15, 0.48, 0, Math.PI * 2);
+  ctx.moveTo(12.4, -1.45);
+  ctx.lineTo(16.8, 0.05);
+  ctx.lineTo(12.4, 1.55);
+  ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 0.9;
+  ctx.stroke();
 
   if (armor) strokeShield(ctx, theme);
 }
