@@ -425,7 +425,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
   if (f.ghostT > 0) f.ghostT = Math.max(0, f.ghostT - dt);
   f.cool = Math.max(0, f.cool - dt);
   if (f.energy <= 0 && f.invT <= 0) return;
-  const onPad = onOwnPad(match, f);
+  const onPad = onShelter(match, f);
   if (f.armorT > 0 && !onPad && drainOn) f.armorT = Math.max(0, f.armorT - dt);
 
   if (onPad) {
@@ -715,8 +715,8 @@ export function shelterAt(match, f) {
   return "none";
 }
 
-function onOwnPad(match, f) {
-  return shelterAt(match, f) === "own";
+function onShelter(match, f) {
+  return shelterAt(match, f) !== "none";
 }
 
 function rearm(match, f) {
@@ -738,7 +738,7 @@ function ai(match, dt) {
     if (nd <= match.diff.hear) e.memory = { x: match.noise.x, y: match.noise.y };
   }
 
-  const onPad = onOwnPad(match, e);
+  const onPad = onShelter(match, e);
   const low = e.energy < 34;
   const veryLow = e.energy < 16;
   let mode = "hunt";

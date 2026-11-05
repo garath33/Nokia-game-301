@@ -204,16 +204,6 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
     ctx.fillStyle = theme.padLine;
     ctx.globalAlpha = (light < 1 ? 0.35 : 0.7) * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(time * 3 + x)));
     ctx.fillRect(px, py + TILE - 3, TILE, 2);
-    if (match.pad[i] !== 1) {
-      ctx.globalAlpha = light < 1 ? 0.45 : 0.8;
-      ctx.strokeStyle = theme.danger;
-      ctx.beginPath();
-      ctx.moveTo(px + 5, py + 5);
-      ctx.lineTo(px + TILE - 5, py + TILE - 5);
-      ctx.moveTo(px + TILE - 5, py + 5);
-      ctx.lineTo(px + 5, py + TILE - 5);
-      ctx.stroke();
-    }
     ctx.globalAlpha = light < 1 ? 0.55 : 1;
   } else if (cell === WALL) {
     ctx.fillStyle = theme.wall;
@@ -624,9 +614,7 @@ function hudHint(match) {
   if (p.invT > 0) return `I AM INVINCIBLE · ${Math.ceil(p.invT)} s`;
   if (p.jackT > 0) return `Zbíječka · ${Math.ceil(p.jackT)} s. Zem neklade odpor.`;
   if (p.ghostT > 0) return `GhostDuck · ${Math.ceil(p.ghostT)} s. Kryje střely před tebou.`;
-  const shelter = shelterAt(match, p);
-  const onPad = shelter === "own";
-  if (shelter === "enemy") return "Cizí kryt. Tady se život nedobíjí.";
+  const onPad = shelterAt(match, p) !== "none";
   if (p.lowPower) return "Málo života na probití. Vrať se do krytu.";
   if (p.digging) return `Probíjíš: ${p.digName}. Střela je rychlejší a žere víc.`;
   if (onPad && p.energy < 99.5) {
@@ -636,7 +624,7 @@ function hudHint(match) {
     return `Dobíjení ${Math.floor(p.energy)} %. Počkej, až se život vrátí naplno.`;
   }
   if (onPad) return "Kryt je plný. Můžeš zase ven.";
-  if (p.energy < 34) return "Život dochází. Šipka K vede do tvého krytu.";
+  if (p.energy < 34) return "Život dochází. Dobije tě vlastní i cizí kryt.";
   if (match.roundTime < 18) return "Knipl nebo šipky hrabou. Kulaté tlačítko a mezerník střílí.";
   return "Život ubývá pořád. Soupeř tě hledá stejně, jako ty jeho.";
 }

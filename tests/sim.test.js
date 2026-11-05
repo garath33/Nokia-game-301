@@ -118,6 +118,8 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   match.player.energy = 40;
   step(match, idle, 1);
   close(match.player.energy, 40 + match.diff.regen * REGEN_BOOST, 0.2, "regen on own pad");
+  const homeX = match.player.homeX;
+  const homeY = match.player.homeY;
   match.player.tx = match.enemy.homeX;
   match.player.ty = match.enemy.homeY;
   match.player.moving = false;
@@ -127,13 +129,13 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   match.enemy.moving = false;
   assert(match.pad[match.player.ty * COLS + match.player.tx] === 2, "tile is the enemy shelter");
   step(match, idle, 1);
-  close(match.player.energy, 50 - match.diff.drain * PACE, 0.25, "enemy shelter drains instead of recharging");
-  match.enemy.tx = match.player.tx;
-  match.enemy.ty = match.player.ty;
+  close(match.player.energy, 50 + match.diff.regen * REGEN_BOOST, 0.25, "enemy shelter recharges too");
+  match.enemy.tx = homeX;
+  match.enemy.ty = homeY;
+  match.enemy.moving = false;
   match.enemy.energy = 40;
-  match.diff.regen = 0;
   step(match, idle, 1);
-  assert(match.enemy.energy < 40, "enemy drains inside your bunker");
+  close(match.enemy.energy, 40 + match.diff.regen * REGEN_BOOST, 0.35, "enemy refills in your shelter");
 }
 
 {
