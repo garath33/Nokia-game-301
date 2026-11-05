@@ -1,5 +1,6 @@
 import {
   AIR,
+  BOON_POWER,
   CLAY,
   COLS,
   GRAVEL,
@@ -47,6 +48,17 @@ export function noteEvents(view, match, theme) {
     }
     if (event.t === "boom") view.shake = 9;
     if (event.t === "shoot") burst(view, event.x, event.y, theme, 2);
+    if (event.t === "boon") {
+      const pos = tileCenter(event.x, event.y);
+      view.floaters.push({
+        x: pos.x,
+        y: pos.y - 16,
+        text: event.id === "power" ? "PRŮRAZ" : "KADENCE",
+        life: 1.1,
+        max: 1.1,
+        color: theme.good,
+      });
+    }
   }
 }
 
@@ -195,6 +207,7 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
       ctx.globalAlpha = light < 1 ? 0.55 : 1;
     }
   }
+  if (match.boon && match.boon[i]) drawBoon(ctx, theme, px, py, match.boon[i], time, light);
   ctx.globalAlpha = 1;
 }
 
@@ -217,6 +230,32 @@ function paintGround(ctx, theme, cell, px, py, n, full) {
     const sy = py + ((n >> (s + 3)) % (TILE - 3));
     ctx.fillRect(sx, sy, 2, 2);
   }
+}
+
+function drawBoon(ctx, theme, px, py, kind, time, light) {
+  const pulse = 0.55 + 0.45 * Math.sin(time * 6 + px * 0.15);
+  ctx.save();
+  ctx.globalAlpha = light < 1 ? 0.8 : 1;
+  ctx.fillStyle = "#071007";
+  ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+  ctx.fillStyle = theme.good;
+  ctx.globalAlpha = (light < 1 ? 0.75 : 1) * (0.7 + 0.3 * pulse);
+  ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = kind === BOON_POWER ? theme.player.beak : "#102000";
+  ctx.beginPath();
+  if (kind === BOON_POWER) {
+    ctx.moveTo(px + 7, py + TILE / 2);
+    ctx.lineTo(px + TILE - 6, py + 7);
+    ctx.lineTo(px + TILE - 6, py + TILE - 7);
+  } else {
+    ctx.rect(px + 7, py + 7, 4, TILE - 14);
+    ctx.rect(px + 13, py + 7, 4, TILE - 14);
+    ctx.rect(px + 19, py + 7, 4, TILE - 14);
+  }
+  ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = light < 1 ? 0.55 : 1;
 }
 
 function edgeGlow(ctx, match, theme, x, y, px, py) {
@@ -412,7 +451,7 @@ function drawRadar(ctx, match, theme, view, dt, radar) {
       const i = ty * COLS + tx;
       if (!match.seen[i]) continue;
       const cell = match.type[i];
-      ctx.fillStyle = radarColor(cell, theme);
+      ctx.fillStyle = match.boon[i] ? theme.good : radarColor(cell, theme);
       ctx.fillRect(x + tx * sx, y + ty * sy, Math.ceil(sx), Math.ceil(sy));
     }
   }
@@ -471,7 +510,7 @@ function radarColor(cell, theme) {
 function drawHud(ctx, w, h, match, theme, ui) {
   const load = duckLevel(match.upgrades);
   const panelW = ui.panelW;
-  const panelH = ui.narrow ? 108 : 136;
+  const panelH = ui.narrow ? 108 : (match.found?.power || match.found?.rate ? 158 : 136);
   ctx.fillStyle = theme.panel;
   ctx.fillRect(14, 14, panelW, panelH);
   ctx.strokeStyle = theme.line;
@@ -498,6 +537,12 @@ function drawHud(ctx, w, h, match, theme, ui) {
     ? `PANCÍŘ ${Math.ceil(match.player.armorT)} s`
     : "BEZ PANCÍŘE";
   labeledBar(ctx, 28, barY + 32, panelW - 28, armorPct, theme.shield, armorLabel, theme);
+  const boon = boonLine(match);
+  if (boon && !ui.narrow) {
+    ctx.fillStyle = theme.good;
+    ctx.font = "12px ui-monospace, monospace";
+    ctx.fillText(boon, 28, barY + 58);
+  }
 
   const hint = hudHint(match);
   ctx.font = ui.narrow ? "12px ui-monospace, monospace" : "13px ui-monospace, monospace";
@@ -545,8 +590,20 @@ function hudHint(match) {
   }
   if (onPad) return "Kryt je plný. Můžeš zase ven.";
   if (p.energy < 34) return "Život dochází. Šipka K vede do tvého krytu.";
-  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. M ztlumí zvuk.";
+  const boon = boonLine(match);
+  if (boon) return boon;
+  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. Zářící kostička drží střelbu jen do konce kola.";
   return "Život ubývá pořád. Soupeř tě hledá stejně, jako ty jeho.";
+}
+
+function boonLine(match) {
+  const power = match.found?.power || 0;
+  const rate = match.found?.rate || 0;
+  if (!power && !rate) return "";
+  const parts = [];
+  if (power) parts.push(`PRŮRAZ +${power}`);
+  if (rate) parts.push(`KADENCE +${rate}`);
+  return `${parts.join("  ")} · TOHLE KOLO`;
 }
 
 function drawMarkers(ctx, w, h, match, theme, view) {

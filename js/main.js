@@ -3,6 +3,7 @@ import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
   DIFFICULTIES,
   SHOP,
+  VICTORY,
   WINS_OPTIONS,
   buy,
   createMatch,
@@ -297,7 +298,9 @@ function setMode(next) {
     status.textContent = "Kolo pro soupeře";
     renderBetween();
   } else if (mode === "over") {
-    status.textContent = "Konec hry";
+    status.textContent = match && match.victor === "player"
+      ? `${VICTORY.title} ${VICTORY.creed}`
+      : "Konec hry";
     renderOver();
   } else if (mode === "pause") status.textContent = "Pauza";
   else status.textContent = `Kolo ${match.round}`;
@@ -333,7 +336,11 @@ function react(before, energy) {
       audio.hit(event.kind === "player");
       if (event.kind === "player") audio.quack();
     }
-    if (event.t === "boom" && event.kind === "enemy") audio.win();
+    if (event.t === "boon") audio.boon();
+    if (event.t === "boom" && event.kind === "enemy") {
+      if (match.phase === "over" && match.victor === "player") audio.triumph();
+      else audio.win();
+    }
     if (event.t === "boom" && event.kind === "player") audio.lose();
   }
   if (energy < 99.5 && match.player.energy >= 100) audio.tick();
@@ -429,9 +436,15 @@ function renderBetween() {
 
 function renderOver() {
   const won = match.victor === "player";
-  document.getElementById("over-title").textContent = won ? "Zápas je tvůj" : "Soupeř vyhrál zápas";
+  document.getElementById("over-card").classList.toggle("victory", won);
+  document.getElementById("over-duck").classList.toggle("hidden", !won);
+  document.getElementById("over-title").textContent = won ? VICTORY.title : "Soupeř vyhrál zápas";
+  const creed = document.getElementById("over-creed");
+  creed.textContent = won ? VICTORY.creed : "";
+  creed.classList.toggle("hidden", !won);
+  const rounds = match.winsNeeded < 5 ? "kola" : "kol";
   document.getElementById("over-copy").textContent = won
-    ? `Výhra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}. Vyhraných zápasů: ${best}.`
+    ? `Zápas na ${match.winsNeeded} ${rounds} je tvůj. Stav ${match.wins}:${match.losses}. Bodů zbylo ${match.points}. Vyhraných zápasů: ${best}.`
     : `Prohra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}.`;
 }
 

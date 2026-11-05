@@ -4,6 +4,8 @@
 // The shelter refills 40% faster. A shot there cannot spend the last of your life:
 // the duck holds still until a real shot is paid for.
 // Tiles a shot opens stay open for the rest of the match. Armor rearms at 100%.
+// A glowing tile grants shot power or fire rate until the next round.
+// Bought upgrades stay for the match. The next round shoots from those.
 
 export const COLS = 76;
 export const ROWS = 42;
@@ -19,6 +21,15 @@ export const SAND = 6;
 export const GRAVEL = 7;
 
 export const WINS_OPTIONS = [3, 5, 8];
+
+export const BOON_POWER = 1;
+export const BOON_RATE = 2;
+const BOON_COUNT = 5;
+
+export const VICTORY = {
+  title: "Vítězství!",
+  creed: "Nechť tě kachní síla provází.",
+};
 
 export const SHOT_COST = 8.5;
 export const SHOT_FLOOR = 1;
@@ -167,6 +178,14 @@ export function duckLevel(upgrades) {
   return 1 + upgrades.power + upgrades.rate + upgrades.armor;
 }
 
+export function shootingPower(match) {
+  return match.upgrades.power + match.found.power;
+}
+
+export function shootingRate(match) {
+  return match.upgrades.rate + match.found.rate;
+}
+
 export function shotPen(power) {
   return 2 + power;
 }
@@ -221,12 +240,14 @@ export function createMatch(opts = {}) {
     roundScale: 1,
     points: 0,
     upgrades: { power: 0, rate: 0, armor: 0 },
+    found: { power: 0, rate: 0 },
     phase: "play",
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
     rock: new Uint8Array(COLS * ROWS),
     seen: new Uint8Array(COLS * ROWS),
     lit: new Uint8Array(COLS * ROWS),
+    boon: new Uint8Array(COLS * ROWS),
     balls: [],
     events: [],
     grace: 1.45,
@@ -379,6 +400,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
       f.moving = false;
       f.tx = f.bx;
       f.ty = f.by;
+      claimBoon(match, f);
     }
   } else if (!waiting && f.wish != null) {
     tryMoveOrDig(match, f, dt, speedMul);
@@ -501,11 +523,11 @@ function tryShoot(match, f) {
   if (f.kind === "player" && onOwnPad(match, f) && f.energy <= SHOT_COST + SHOT_FLOOR) {
     f.holdShot = true;
   }
-  const rate = f.kind === "player" ? match.upgrades.rate : 0;
+  const rate = f.kind === "player" ? shootingRate(match) : 0;
   let cool = fireCooldown(rate);
   if (f.kind === "enemy") cool /= match.diff.fire;
   f.cool = cool;
-  const power = f.kind === "player" ? match.upgrades.power : 0;
+  const power = f.kind === "player" ? shootingPower(match) : 0;
   const d = DIRS[f.facing];
   const len = Math.hypot(d.x, d.y) || 1;
   const pos = fighterPixel(f);
@@ -990,7 +1012,88 @@ function pushEvent(match, event) {
   if (match.events.length > 48) match.events.shift();
 }
 
+function claimBoon(match, f) {
+  if (f.kind !== "player" || !match.boon) return;
+  const id = f.ty * COLS + f.tx;
+  const kind = match.boon[id];
+  if (kind !== BOON_POWER && kind !== BOON_RATE) return;
+  match.boon[id] = 0;
+  const power = kind === BOON_POWER;
+  if (power) match.found.power += 1;
+  else match.found.rate += 1;
+  pushEvent(match, { t: "boon", id: power ? "power" : "rate", x: f.tx, y: f.ty });
+  match.banner = power
+    ? "Kachní průraz. Jen do konce kola."
+    : "Kachní kadence. Jen do konce kola.";
+  match.bannerT = 2.6;
+}
+
+function exitBoonSpots(match) {
+  const spots = [];
+  const dirs = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  let door = null;
+  for (const dir of dirs) {
+    const wall = dir[0] !== 0 ? 4 : 3;
+    const x = match.player.homeX + dir[0] * wall;
+    const y = match.player.homeY + dir[1] * wall;
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) continue;
+    if (match.type[y * COLS + x] === AIR) {
+      door = dir;
+      break;
+    }
+  }
+  if (!door) return spots;
+  const wall = door[0] !== 0 ? 4 : 3;
+  for (let s = wall + 4; s <= wall + 14 && spots.length < 2; s++) {
+    const x = match.player.homeX + door[0] * s;
+    const y = match.player.homeY + door[1] * s;
+    if (x < 3 || y < 3 || x >= COLS - 3 || y >= ROWS - 3) break;
+    const i = y * COLS + x;
+    const cell = match.type[i];
+    if (cell === SAND || cell === SOIL || cell === CLAY || cell === GRAVEL) spots.push(i);
+  }
+  return spots;
+}
+
+function placeBoons(match, rng) {
+  match.boon.fill(0);
+  const chosen = exitBoonSpots(match);
+  const reserved = new Set(chosen);
+  const spots = [];
+  for (let y = 3; y < ROWS - 3; y++) {
+    for (let x = 3; x < COLS - 3; x++) {
+      const i = y * COLS + x;
+      if (reserved.has(i)) continue;
+      const cell = match.type[i];
+      if (cell !== SAND && cell !== SOIL && cell !== CLAY && cell !== GRAVEL) continue;
+      const nearPlayer = Math.hypot(x - match.player.homeX, y - match.player.homeY) < 8;
+      const nearEnemy = Math.hypot(x - match.enemy.homeX, y - match.enemy.homeY) < 8;
+      if (nearPlayer || nearEnemy) continue;
+      spots.push(i);
+    }
+  }
+  for (let i = spots.length - 1; i > 0; i--) {
+    const j = (rng() * (i + 1)) | 0;
+    const swap = spots[i];
+    spots[i] = spots[j];
+    spots[j] = swap;
+  }
+  const count = Math.min(BOON_COUNT, chosen.length + spots.length);
+  const need = count - chosen.length;
+  for (let n = 0; n < need; n++) chosen.push(spots[n]);
+  for (let n = 0; n < chosen.length; n++) {
+    match.boon[chosen[n]] = n % 2 === 0 ? BOON_POWER : BOON_RATE;
+  }
+}
+
 function buildMap(match, rng) {
+  match.found.power = 0;
+  match.found.rate = 0;
   if (!match.ground) {
     match.type.fill(SOIL);
     match.pad.fill(0);
@@ -1056,6 +1159,7 @@ function buildMap(match, rng) {
     if (match.pad[i] === 1) match.seen[i] = 1;
   }
   revealFrom(match, match.player);
+  placeBoons(match, rng);
   const score = `${match.wins}:${match.losses}`;
   match.banner = match.round === 1
     ? `Kolo 1 — zápas na ${match.winsNeeded}`

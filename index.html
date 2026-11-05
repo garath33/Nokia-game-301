@@ -59,7 +59,7 @@
       <div id="swatches" class="swatches"></div>
       <div class="help">
         <div><strong>Pohyb</strong><span>Šipky nebo WASD hrabou tunel. Šikmo jde taky.</span></div>
-        <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku. V krytu se bez energie na výstřel čeká.</span></div>
+        <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku. Zářící kostička přidá průraz nebo kadenci jen do konce kola.</span></div>
         <div><strong>Body</strong><span>Sestřel dá 2 body. Účinnost a kadence stojí 2, pancíř 4.</span></div>
       </div>
       <p id="best" class="best"></p>
@@ -77,7 +77,7 @@
         </div>
         <p id="point-label" class="points">0 bodů</p>
       </div>
-      <p class="lead">Za sestřel jsou 2 body. Můžeš je hned utratit za malé vylepšení, nebo je schovat. Dvě kola bez nákupu jsou pancíř.</p>
+      <p class="lead">Za sestřel jsou 2 body. Koupené vylepšení zůstává celý zápas. Bonus ze zářící kostičky se na další kolo smaže a střelba se vrátí k tomu, co máš koupené.</p>
       <div id="cards" class="cards"></div>
       <p id="shop-note" class="note"></p>
       <button id="next" class="primary" type="button">DALŠÍ KOLO</button>
@@ -103,10 +103,21 @@
   </section>
 
   <section id="over" class="overlay hidden">
-    <div class="card">
+    <div class="card" id="over-card">
+      <svg id="over-duck" class="victory-mark hidden" viewBox="0 0 74 48" aria-hidden="true">
+        <ellipse cx="34" cy="27" rx="16" ry="12" fill="var(--duck)"/>
+        <ellipse cx="18" cy="27" rx="8" ry="6" fill="var(--duck)"/>
+        <ellipse cx="36" cy="16" rx="8" ry="4" fill="var(--wing)"/>
+        <ellipse cx="36" cy="38" rx="8" ry="4" fill="var(--wing)"/>
+        <circle cx="48" cy="27" r="8" fill="var(--duck)"/>
+        <path d="M54 24 L68 27 L54 30 Z" fill="var(--beak)"/>
+        <rect x="47" y="23" width="3" height="3" fill="#102000"/>
+        <rect x="47" y="29" width="3" height="3" fill="#102000"/>
+      </svg>
       <div class="over-head">
         <h2 id="over-title">Zápas končí</h2>
       </div>
+      <p id="over-creed" class="creed hidden"></p>
       <p id="over-copy" class="lead"></p>
       <button id="again" class="primary" type="button">ZNOVU</button>
       <button id="over-menu" type="button">Menu</button>

@@ -1,5 +1,7 @@
 import {
   AIR,
+  BOON_POWER,
+  BOON_RATE,
   CLAY,
   COLS,
   GRAVEL,
@@ -10,6 +12,7 @@ import {
   SHOT_COST,
   SHOT_FLOOR,
   SOIL,
+  VICTORY,
   WALL,
   densityOf,
   buy,
@@ -17,6 +20,8 @@ import {
   createMatch,
   facingToward,
   findPath,
+  shootingPower,
+  shootingRate,
   shotPen,
   startNextRound,
   step,
@@ -382,6 +387,140 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   }
   const fresh = createMatch({ seed: 25, difficulty: "normal" });
   assert(!fresh.shot.some((v) => v), "a new match forgets shot walls");
+}
+
+assert(VICTORY.title === "Vítězství!", "victory title");
+assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed");
+
+{
+  const match = createMatch({ seed: 7, difficulty: "normal" });
+  let boons = 0;
+  let powers = 0;
+  let rates = 0;
+  for (let i = 0; i < match.boon.length; i++) {
+    if (!match.boon[i]) continue;
+    boons += 1;
+    if (match.boon[i] === BOON_POWER) powers += 1;
+    else if (match.boon[i] === BOON_RATE) rates += 1;
+    const cell = match.type[i];
+    assert(cell === SAND || cell === SOIL || cell === CLAY || cell === GRAVEL, "boon sits in earth");
+    const x = i % COLS;
+    const y = (i / COLS) | 0;
+    assert(Math.hypot(x - match.player.homeX, y - match.player.homeY) >= 6, "boon stays off the home bunker");
+    assert(Math.hypot(x - match.enemy.homeX, y - match.enemy.homeY) >= 6, "boon stays off the rival bunker");
+  }
+  assert(boons === 5, `five lucky tiles (${boons})`);
+  assert(powers >= 1 && rates >= 1, "both shot bonuses appear");
+  let nearest = 999;
+  for (let i = 0; i < match.boon.length; i++) {
+    if (!match.boon[i]) continue;
+    const x = i % COLS;
+    const y = (i / COLS) | 0;
+    nearest = Math.min(nearest, Math.hypot(x - match.player.homeX, y - match.player.homeY));
+  }
+  assert(nearest <= 16, `a lucky tile waits outside the bunker (${nearest})`);
+  assert(match.found.power === 0 && match.found.rate === 0, "round starts from bought shooting");
+}
+
+{
+  const match = createMatch({ seed: 27, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.diff.drain = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  const id = y * COLS + x;
+  match.type[id] = SAND;
+  match.pad[id] = 0;
+  match.rock[id] = 0;
+  match.boon[id] = BOON_POWER;
+  match.player.energy = 90;
+  let guard = 0;
+  while ((match.player.tx !== x || match.player.ty !== y) && guard++ < 50) {
+    step(match, { ...idle, right: true }, 0.05);
+  }
+  assert(match.player.tx === x && match.player.ty === y, "duck lands on the tile");
+  assert(match.found.power === 1 && match.boon[id] === 0, "landing grants shot power for this round");
+  assert(shootingPower(match) === 1 && shootingRate(match) === 0, "tile power is live");
+  match.player.moving = false;
+  match.player.wish = null;
+  match.player.facing = 2;
+  match.player.cool = 0;
+  match.balls.length = 0;
+  step(match, shoot, 0.05);
+  assert(match.balls.length === 1 && match.balls[0].pen === shotPen(1), "tile raises penetration");
+
+  const rateX = x + 1;
+  const rateId = y * COLS + rateX;
+  match.type[rateId] = SAND;
+  match.pad[rateId] = 0;
+  match.rock[rateId] = 0;
+  match.boon[rateId] = BOON_RATE;
+  match.player.energy = 90;
+  match.player.moving = false;
+  guard = 0;
+  while (match.player.tx !== rateX && guard++ < 50) step(match, { ...idle, right: true }, 0.05);
+  assert(match.found.power === 1 && match.found.rate === 1, "both tile bonuses last this round");
+  assert(shootingRate(match) === 1, "tile rate is live");
+
+  match.points = 4;
+  match.phase = "shop";
+  assert(buy(match, "power").ok, "purchase is separate from the tile");
+  assert(match.upgrades.power === 1 && match.found.power === 1, "bought power stacks on the tile until the round ends");
+  assert(startNextRound(match), "next round drops the tiles");
+  assert(match.found.power === 0 && match.found.rate === 0, "tile bonuses do not cross the round");
+  assert(match.upgrades.power === 1 && match.upgrades.rate === 0 && match.upgrades.armor === 0, "bought shooting stays");
+  assert(shootingPower(match) === 1 && shootingRate(match) === 0, "next round shoots from the purchase");
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.player.cool = 0;
+  match.player.facing = 2;
+  match.player.energy = 40;
+  step(match, shoot, 0.05);
+  assert(match.balls.length === 1 && match.balls[0].pen === shotPen(1), "the new round uses bought power only");
+}
+
+{
+  const match = createMatch({ seed: 28, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.diff.drain = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  const id = y * COLS + x;
+  match.type[id] = SAND;
+  match.pad[id] = 0;
+  match.rock[id] = 0;
+  match.boon[id] = BOON_RATE;
+  match.player.facing = 2;
+  match.player.energy = 80;
+  step(match, shoot, 0.05);
+  step(match, idle, 0.45);
+  assert(match.type[id] === AIR, "shot opens the lucky sand");
+  assert(match.boon[id] === BOON_RATE && match.found.rate === 0, "a shot does not collect the tile");
+  let guard = 0;
+  while (match.player.tx !== x && guard++ < 40) step(match, { ...idle, right: true }, 0.05);
+  assert(match.found.rate === 1 && match.boon[id] === 0, "rolling onto the opened tile collects it");
+}
+
+{
+  const match = createMatch({ seed: 29, difficulty: "normal" });
+  const x = match.enemy.tx + 1;
+  const y = match.enemy.ty;
+  const id = y * COLS + x;
+  match.type[id] = AIR;
+  match.pad[id] = 0;
+  match.boon[id] = BOON_POWER;
+  match.enemy.moving = true;
+  match.enemy.ax = match.enemy.tx;
+  match.enemy.ay = match.enemy.ty;
+  match.enemy.bx = x;
+  match.enemy.by = y;
+  match.enemy.mt = 0.85;
+  match.enemy.dur = 0.2;
+  step(match, idle, 0.05);
+  assert(match.enemy.tx === x && match.enemy.ty === y, "rival can cross the tile");
+  assert(match.found.power === 0 && match.boon[id] === BOON_POWER, "only the player collects a lucky tile");
 }
 
 if (failed) {

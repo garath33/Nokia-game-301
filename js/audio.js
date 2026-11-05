@@ -195,10 +195,20 @@ export function createAudio() {
     tick() {
       tone(880, 0.04, "square", 0.03, 880);
     },
+    boon() {
+      tone(660, 0.07, "square", 0.05, 880);
+      setTimeout(() => tone(880, 0.09, "square", 0.05, 1180), 70);
+    },
     win() {
       tone(523, 0.1, "square", 0.05, 523);
       setTimeout(() => tone(659, 0.1, "square", 0.05, 659), 90);
       setTimeout(() => tone(784, 0.16, "square", 0.05, 784), 180);
+    },
+    triumph() {
+      tone(523, 0.12, "square", 0.06, 523);
+      setTimeout(() => tone(659, 0.12, "square", 0.06, 659), 120);
+      setTimeout(() => tone(784, 0.12, "square", 0.06, 784), 240);
+      setTimeout(() => tone(1046, 0.28, "square", 0.07, 1318), 380);
     },
     lose() {
       tone(220, 0.2, "sawtooth", 0.06, 70);
