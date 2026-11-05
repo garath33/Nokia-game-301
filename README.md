@@ -30,8 +30,14 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 - Čím vyšší hustota, tím dražší hrabání. Skála se míčkem láme na třikrát.
 - Pole prostřelené míčkem zůstane otevřené až do nového zápasu. Vydlabaný tunel se mezi koly zavře. Nový zápas postaví novou zem.
 
+## Kachna 3310
+
+Druhá hra je na `kachna.html`. Nokia z nočního trhu: fialová kachnička, tyrkysový zobák a číro, růžové brýle. Hráč si zvolí krycí jméno a honí vlastní stín, nejlepší skóre v tomhle prohlížeči.
+
+Synthrohlík dá 10 kvá krát kombo. Kombo drží deset dílků, strop je ×5. Každý čtvrtý rohlík přidá adrenalin a zrychlí ulici. Síň kváknutí je místní výloha, nikam se neposílá.
+
 ## Test
 
-`npm test` pustí pravidla (`tests/sim.test.js`) a jeden průchod hráče (`tests/experience.test.js`): hrabání podle hustoty, cenu střely, návrat do krytu a konec zápasu na zvolený počet výher.
+`npm test` pustí pravidla Kačíka (`tests/sim.test.js`), jeden průchod hráče (`tests/experience.test.js`) a pravidla Kachny 3310 (`test/logic.test.js`).
 
 Ve hře stačí minuta: Na 3, vyjít z krytu, prostřílet pár polí, vrátit se a počkat na 100 %. Výstřel má být slyšet přes hudbu. Kvákání po zásahu ne častěji než jednou za dvě sekundy.

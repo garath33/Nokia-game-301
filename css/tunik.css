@@ -260,6 +260,8 @@ button:disabled {
 .help span { color: var(--muted); font-size: 14px; }
 
 .best { margin: 12px 0 0; color: var(--muted); }
+.sidegame { margin: 14px 0 0; font-size: 14px; }
+.sidegame a { color: var(--accent); }
 
 .shop-head, .over-head { display: flex; justify-content: space-between; gap: 12px; align-items: end; }
 .shop-head h2, .over-head h2, #pause h2 { margin: 0; letter-spacing: 0.08em; }
