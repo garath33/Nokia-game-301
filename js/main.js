@@ -246,7 +246,7 @@ function bindStick(stick) {
     const dy = event.clientY - (rect.top + rect.height / 2);
     const limit = rect.width * 0.32;
     const dist = Math.hypot(dx, dy);
-    const dead = limit * 0.286;
+    const dead = limit * 0.343;
     if (dist < dead) {
       releaseStick();
       return;
@@ -255,7 +255,7 @@ function bindStick(stick) {
     place(dx * scale, dy * scale);
     const nx = dx / dist;
     const ny = dy / dist;
-    const slice = 0.52;
+    const slice = 0.624;
     keys.right = nx > slice;
     keys.left = nx < -slice;
     keys.down = ny > slice;

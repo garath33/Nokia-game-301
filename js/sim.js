@@ -57,7 +57,8 @@ export function densityOf(cell) {
 }
 
 export const PACE = 0.8;
-export const REGEN_BOOST = 1.3;
+export const WALK = 0.8;
+export const REGEN_BOOST = 1.69;
 
 const ARMOR_TIME = [0, 20, 36];
 const ARMOR_ABSORB = [0, 0.65, 0.8];
@@ -473,7 +474,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
     f.digT = 0;
     f.lowPower = false;
     pushEvent(match, { t: "dig", x: nx, y: ny, kind: f.kind });
-    startMove(f, nx, ny, 0.06);
+    startMove(f, nx, ny, 0.06 / WALK);
     return;
   }
   if (cell === WALL) {
@@ -493,7 +494,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
     }
     const diag = d.x !== 0 && d.y !== 0;
     const pace = f.kind === "player" ? 1 + 0.2 * (match.upgrades.speed || 0) : 1;
-    startMove(f, nx, ny, (diag ? 0.16 : 0.12) / (speedMul * pace));
+    startMove(f, nx, ny, (diag ? 0.16 : 0.12) / (speedMul * pace * WALK));
     return;
   }
 
@@ -524,7 +525,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   pushEvent(match, { t: "dig", x: nx, y: ny, kind: f.kind });
   if (f.kind === "player") match.noise = { x: nx, y: ny, ttl: 1.4, kind: "player" };
   else if (!match.lit[ny * COLS + nx]) match.rumor = { x: nx, y: ny, ttl: 1.15 };
-  startMove(f, nx, ny, 0.08 / speedMul);
+  startMove(f, nx, ny, 0.08 / (speedMul * WALK));
 }
 
 function startMove(f, nx, ny, dur) {
