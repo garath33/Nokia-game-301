@@ -10,13 +10,21 @@ V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo 
 
 Mapa je ve vlnitých vrstvách: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. Kačenka je žlutá s oranžovým zobákem. Po zásahu kvákne, nejdřív za dvě sekundy znovu, a čtvrt sekundy další střela nepočítá. Míček má krátkou stopu. Hudba a rány se ztlumují zvlášť.
 
-## Hraní
+## Hraní na počítači
+
+Hra nemá vlastní okno programu. Otevře se v prohlížeči.
+
+Ve složce hry spusť:
 
 ```bash
-npm start
+python3 serve.py
 ```
 
-Pak otevři `http://localhost:8765`.
+Příkaz vypíše adresu, obvykle `http://127.0.0.1:8765`. Tu zadej do Chromu, Firefoxu nebo Edge. Terminál nech běžet, hra v něm stojí. Vypne se klávesami Ctrl+C.
+
+Když terminál napíše, že adresa už je obsazená (`Address already in use`), server už běží. Druhý start není potřeba, stačí otevřít tu adresu v prohlížeči.
+
+`npm start` dělá totéž. V novém terminálu ale npm někdy není vidět a napíše `npm: command not found`. `python3 serve.py` npm nepotřebuje.
 
 Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu (zapnuto, potichu, vypnuto). Rány mají v menu vlastní tlačítko. Esc je pauza.
 
