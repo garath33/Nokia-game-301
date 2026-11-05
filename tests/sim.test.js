@@ -7,6 +7,8 @@ import {
   ROCK,
   SAND,
   HIT_GRACE,
+  PACE,
+  REGEN_BOOST,
   SHOT_COST,
   SOIL,
   WALL,
@@ -107,7 +109,7 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   match.pad[tile] = 0;
   match.type[tile] = AIR;
   step(match, idle, 2);
-  close(match.player.energy, 50 - match.diff.drain * 2, 0.15, "drain outside");
+  close(match.player.energy, 50 - match.diff.drain * 2 * PACE, 0.15, "drain outside");
 }
 
 {
@@ -115,7 +117,7 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   match.grace = 0;
   match.player.energy = 40;
   step(match, idle, 1);
-  close(match.player.energy, 40 + match.diff.regen, 0.2, "regen on own pad");
+  close(match.player.energy, 40 + match.diff.regen * REGEN_BOOST, 0.2, "regen on own pad");
   match.enemy.tx = match.player.tx;
   match.enemy.ty = match.player.ty;
   match.enemy.energy = 40;
@@ -386,7 +388,7 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   assert(strike(match, match.player, 30) === 30, "first hit lands");
   assert(strike(match, match.player, 30) === 0, "next hit inside the gap does not count");
   assert(match.player.energy === 70, "life stays at 70");
-  step(match, idle, HIT_GRACE);
+  step(match, idle, HIT_GRACE / PACE);
   assert(strike(match, match.player, 30) === 30, "hit counts after a quarter second");
   assert(match.player.energy === 40, "second counted hit");
 }

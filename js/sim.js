@@ -56,6 +56,9 @@ export function densityOf(cell) {
   return DIG[cell]?.density ?? 0;
 }
 
+export const PACE = 0.8;
+export const REGEN_BOOST = 1.3;
+
 const ARMOR_TIME = [0, 20, 36];
 const ARMOR_ABSORB = [0, 0.65, 0.8];
 
@@ -357,7 +360,7 @@ export function fighterPixel(f) {
 }
 
 export function step(match, input, dt) {
-  let left = Math.max(0, dt);
+  let left = Math.max(0, dt) * PACE;
   let guard = 0;
   while (left > 1e-6 && guard++ < 240) {
     const h = Math.min(left, 1 / 60);
@@ -427,7 +430,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
 
   if (onPad) {
     const prev = f.energy;
-    f.energy = Math.min(100, f.energy + match.diff.regen * dt);
+    f.energy = Math.min(100, f.energy + match.diff.regen * (REGEN_BOOST / PACE) * dt);
     if (prev < 99.5 && f.energy >= 100) rearm(match, f);
   } else if (drainOn) {
     f.energy -= match.diff.drain * dt;
