@@ -416,7 +416,6 @@ function stepOnce(match, input, dt) {
 }
 
 function updateFighter(match, f, dt, drainOn, speedMul) {
-  if (f.energy <= 0) return;
   if (f.hitGrace > 0) {
     f.hitGrace -= dt;
     if (f.hitGrace < 0.001) f.hitGrace = 0;
@@ -425,6 +424,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
   if (f.invT > 0) f.invT = Math.max(0, f.invT - dt);
   if (f.ghostT > 0) f.ghostT = Math.max(0, f.ghostT - dt);
   f.cool = Math.max(0, f.cool - dt);
+  if (f.energy <= 0 && f.invT <= 0) return;
   const onPad = onOwnPad(match, f);
   if (f.armorT > 0 && !onPad && drainOn) f.armorT = Math.max(0, f.armorT - dt);
 
@@ -433,7 +433,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
     f.energy = Math.min(100, f.energy + match.diff.regen * (REGEN_BOOST / PACE) * dt);
     if (prev < 99.5 && f.energy >= 100) rearm(match, f);
   } else if (drainOn) {
-    f.energy -= match.diff.drain * dt;
+    f.energy = Math.max(0, f.energy - match.diff.drain * dt);
   }
 
   if (f.moving) {
@@ -674,7 +674,7 @@ function chew(match, b, tx, ty, cell, id) {
 
 function fighterAt(match, b) {
   for (const f of [match.player, match.enemy]) {
-    if (!f || f.kind === b.owner || f.energy <= 0) continue;
+    if (!f || f.kind === b.owner || (f.energy <= 0 && f.invT <= 0)) continue;
     const p = fighterPixel(f);
     if (Math.hypot(p.x - b.x, p.y - b.y) < TILE * 0.34) return f;
   }
@@ -683,7 +683,7 @@ function fighterAt(match, b) {
 
 function resolveDeaths(match) {
   if (match.phase !== "play") return;
-  if (match.player.energy <= 0) {
+  if (match.player.energy <= 0 && match.player.invT <= 0) {
     match.player.energy = 0;
     match.player.alive = false;
     match.losses += 1;
@@ -692,7 +692,7 @@ function resolveDeaths(match) {
     pushEvent(match, { t: "boom", x: match.player.tx, y: match.player.ty, kind: "player" });
     return;
   }
-  if (match.enemy.energy <= 0) {
+  if (match.enemy.energy <= 0 && match.enemy.invT <= 0) {
     match.enemy.energy = 0;
     match.enemy.alive = false;
     match.wins += 1;

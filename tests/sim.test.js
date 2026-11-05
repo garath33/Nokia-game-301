@@ -469,6 +469,19 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   match.player.energy = 100;
   assert(strike(match, match.player, 30) === 0, "invincible ignores the hit");
   assert(match.player.energy === 100, "life stays full");
+  match.grace = 0;
+  match.player.energy = 0.2;
+  match.player.invT = 5;
+  match.pad[match.player.ty * COLS + match.player.tx] = 0;
+  step(match, idle, 1);
+  assert(match.phase === "play" && match.player.alive, "empty life does not kill while invincible");
+  assert(match.player.energy === 0, "life can sit at zero");
+  assert(match.player.invT > 0, "the bonus is still running");
+  match.player.invT = 0.05;
+  step(match, idle, 1);
+  assert(match.phase !== "play" && !match.player.alive, "death comes when invincibility runs out");
+  match.phase = "play";
+  match.player.alive = true;
   match.player.invT = 0;
   let spot = -1;
   for (let i = 0; i < match.lootAt.length; i++) {
@@ -501,6 +514,15 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   let moved = 0;
   for (let i = 0; i < first.length; i++) if (first[i] !== match.lootAt[i]) moved += 1;
   assert(moved > 20, "bonus spots change the next round");
+}
+
+{
+  const sheltered = createMatch({ seed: 20, difficulty: "normal" });
+  sheltered.grace = 0;
+  sheltered.player.energy = 0;
+  sheltered.player.invT = 5;
+  step(sheltered, idle, 0.5);
+  assert(sheltered.player.energy > 0 && sheltered.phase === "play", "shelter refills during invincibility at zero life");
 }
 
 {

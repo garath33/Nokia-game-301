@@ -1,2 +1,2 @@
 export const GAME_NAME = "kacik";
-export const GAME_VERSION = 4;
+export const GAME_VERSION = 5;
