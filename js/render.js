@@ -592,7 +592,7 @@ function hudHint(match) {
   if (p.energy < 34) return "Život dochází. Šipka K vede do tvého krytu.";
   const boon = boonLine(match);
   if (boon) return boon;
-  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. Zářící kostička drží střelbu jen do konce kola.";
+  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. Kostička vydrží ještě příští kolo.";
   return "Život ubývá pořád. Soupeř tě hledá stejně, jako ty jeho.";
 }
 
@@ -603,7 +603,7 @@ function boonLine(match) {
   const parts = [];
   if (power) parts.push(`PRŮRAZ +${power}`);
   if (rate) parts.push(`KADENCE +${rate}`);
-  return `${parts.join("  ")} · TOHLE KOLO`;
+  return `${parts.join("  ")} · JEŠTĚ KOLO`;
 }
 
 function drawMarkers(ctx, w, h, match, theme, view) {

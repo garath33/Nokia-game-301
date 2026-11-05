@@ -464,20 +464,34 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   assert(shootingRate(match) === 1, "tile rate is live");
 
   match.points = 4;
-  match.phase = "shop";
+  match.enemy.energy = 0;
+  step(match, idle, 0.05);
+  assert(match.phase === "shop", "a kill opens the shop with the tile still held");
+  assert(match.found.power === 1 && match.found.rate === 1, "dying this round does not erase a fresh tile");
   assert(buy(match, "power").ok, "purchase is separate from the tile");
-  assert(match.upgrades.power === 1 && match.found.power === 1, "bought power stacks on the tile until the round ends");
-  assert(startNextRound(match), "next round drops the tiles");
-  assert(match.found.power === 0 && match.found.rate === 0, "tile bonuses do not cross the round");
+  assert(match.upgrades.power === 1, "bought power");
+  assert(startNextRound(match), "next round keeps the tile");
+  assert(match.found.power === 1 && match.found.rate === 1, "tile bonuses last the next round");
   assert(match.upgrades.power === 1 && match.upgrades.rate === 0 && match.upgrades.armor === 0, "bought shooting stays");
-  assert(shootingPower(match) === 1 && shootingRate(match) === 0, "next round shoots from the purchase");
+  assert(shootingPower(match) === 2 && shootingRate(match) === 1, "next round shoots with the tile and the purchase");
   match.grace = 0;
   match.diff.regen = 0;
+  match.diff.drain = 0;
   match.player.cool = 0;
   match.player.facing = 2;
   match.player.energy = 40;
+  match.balls.length = 0;
   step(match, shoot, 0.05);
-  assert(match.balls.length === 1 && match.balls[0].pen === shotPen(1), "the new round uses bought power only");
+  assert(match.balls.length === 1 && match.balls[0].pen === shotPen(2), "the carried tile still raises penetration");
+  match.enemy.energy = 0;
+  step(match, idle, 0.05);
+  assert(match.phase === "shop", "the next death opens the shop again");
+  assert(match.found.power === 0 && match.found.rate === 0, "a death in the next round drops the tile");
+  assert(match.upgrades.power === 1, "the purchase survives that death");
+  assert(shootingPower(match) === 1 && shootingRate(match) === 0, "shooting falls back to the purchase");
+  assert(startNextRound(match), "the round after that stays clean");
+  assert(match.found.power === 0 && match.found.rate === 0, "the tile does not return");
+  assert(shootingPower(match) === 1, "only the purchase remains");
 }
 
 {

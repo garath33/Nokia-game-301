@@ -4,8 +4,9 @@
 // The shelter refills 40% faster. A shot there cannot spend the last of your life:
 // the duck holds still until a real shot is paid for.
 // Tiles a shot opens stay open for the rest of the match. Armor rearms at 100%.
-// A glowing tile grants shot power or fire rate until the next round.
-// Bought upgrades stay for the match. The next round shoots from those.
+// A glowing tile grants shot power or fire rate for this round and the next.
+// When someone dies in that next round, the gift is gone. It does not last the match.
+// Bought upgrades stay for the match.
 
 export const COLS = 76;
 export const ROWS = 42;
@@ -241,6 +242,7 @@ export function createMatch(opts = {}) {
     points: 0,
     upgrades: { power: 0, rate: 0, armor: 0 },
     found: { power: 0, rate: 0 },
+    kept: { power: 0, rate: 0 },
     phase: "play",
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
@@ -641,6 +643,7 @@ function resolveDeaths(match) {
     match.losses += 1;
     match.phase = match.losses >= match.winsNeeded ? "over" : "between";
     if (match.phase === "over") match.victor = "enemy";
+    settleBoon(match);
     pushEvent(match, { t: "boom", x: match.player.tx, y: match.player.ty, kind: "player" });
     return;
   }
@@ -651,6 +654,7 @@ function resolveDeaths(match) {
     match.points += 2;
     match.phase = match.wins >= match.winsNeeded ? "over" : "shop";
     if (match.phase === "over") match.victor = "player";
+    settleBoon(match);
     pushEvent(match, { t: "boom", x: match.enemy.tx, y: match.enemy.ty, kind: "enemy" });
   }
 }
@@ -1019,13 +1023,30 @@ function claimBoon(match, f) {
   if (kind !== BOON_POWER && kind !== BOON_RATE) return;
   match.boon[id] = 0;
   const power = kind === BOON_POWER;
-  if (power) match.found.power += 1;
-  else match.found.rate += 1;
+  if (power) {
+    match.found.power += 1;
+    match.kept.power += 1;
+  } else {
+    match.found.rate += 1;
+    match.kept.rate += 1;
+  }
   pushEvent(match, { t: "boon", id: power ? "power" : "rate", x: f.tx, y: f.ty });
   match.banner = power
-    ? "Kachní průraz. Jen do konce kola."
-    : "Kachní kadence. Jen do konce kola.";
+    ? "Kachní průraz. Ještě příští kolo."
+    : "Kachní kadence. Ještě příští kolo.";
   match.bannerT = 2.6;
+}
+
+function settleBoon(match) {
+  match.found.power = match.kept.power;
+  match.found.rate = match.kept.rate;
+}
+
+function carryBoon(match) {
+  match.found.power = match.kept.power;
+  match.found.rate = match.kept.rate;
+  match.kept.power = 0;
+  match.kept.rate = 0;
 }
 
 function exitBoonSpots(match) {
@@ -1092,8 +1113,7 @@ function placeBoons(match, rng) {
 }
 
 function buildMap(match, rng) {
-  match.found.power = 0;
-  match.found.rate = 0;
+  carryBoon(match);
   if (!match.ground) {
     match.type.fill(SOIL);
     match.pad.fill(0);

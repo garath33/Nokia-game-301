@@ -4,7 +4,7 @@ Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou
 
 Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, pancíř 4. Body se mezi koly neztratí, takže se dají schovat. Koupené vylepšení zůstává celý zápas.
 
-V zemi svítí pár kachních kostiček. Najetí na ně přidá průraz nebo kadenci, ale jen do konce kola. Další kolo střílíš zase z toho, co máš koupené. Když jsi nekupoval, střelba je znovu ta výchozí.
+V zemi svítí pár kachních kostiček. Najetí na ně přidá průraz nebo kadenci hned a ještě na příští kolo. Když v tom příštím kole někdo zemře, bonus zmizí a střelba je zase jen ta koupená. Napořád nezůstane. Když jsi nekupoval, střelba je znovu ta výchozí.
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet. Výhra na ten počet kol se ohlásí větou: Vítězství! Nechť tě kachní síla provází.
 
