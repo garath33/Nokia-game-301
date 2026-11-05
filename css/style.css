@@ -33,6 +33,15 @@ button { cursor: pointer; }
   outline-offset: 2px;
 }
 
+.to-kacik {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 2;
+  color: var(--cyan);
+  font-size: 13px;
+}
+
 .sr {
   position: absolute;
   width: 1px;

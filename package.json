@@ -1,9 +1,9 @@
 {
-  "name": "kachna-3310",
+  "name": "kacik",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
-    "start": "python3 -m http.server 4173 --bind 127.0.0.1"
+    "test": "node tests/sim.test.js && node tests/experience.test.js && node --test test/logic.test.js",
+    "start": "python3 -m http.server 8765"
   }
 }
