@@ -13,6 +13,7 @@ import {
   densityOf,
   buy,
   clearLine,
+  ghostSpot,
   createMatch,
   facingToward,
   findPath,
@@ -457,17 +458,78 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   assert(strike(match, match.player, 30) === 0, "invincible ignores the hit");
   assert(match.player.energy === 100, "life stays full");
   match.player.invT = 0;
-  match.loot = 29;
-  match.grace = 0;
-  const x = match.player.tx + 1;
-  const y = match.player.ty;
-  match.type[y * COLS + x] = SOIL;
+  let spot = -1;
+  for (let i = 0; i < match.lootAt.length; i++) {
+    if (match.lootAt[i]) {
+      spot = i;
+      break;
+    }
+  }
+  assert(spot >= 0, "round hides bonuses in the ground");
+  const lx = spot % COLS;
+  const ly = (spot / COLS) | 0;
+  const code = match.lootAt[spot];
+  match.player.tx = lx - 1;
+  match.player.ty = ly;
   match.player.facing = 2;
+  match.player.moving = false;
   match.player.cool = 0;
   match.player.energy = 90;
-  step(match, { ...idle, shoot: true }, 0.2);
-  const gained = match.upgrades.power + match.upgrades.rate + match.upgrades.speed + match.upgrades.spread;
-  assert(match.player.jackT > 0 || match.player.invT > 0 || gained > 0, "the 30th shot tile drops a bonus");
+  match.grace = 0;
+  match.type[ly * COLS + lx] = SOIL;
+  step(match, { ...idle, shoot: true }, 0.25);
+  const gained = match.upgrades.power + match.upgrades.rate + match.upgrades.speed + match.upgrades.spread + match.upgrades.laser;
+  assert(
+    match.lootAt[spot] === 0 && (match.player.jackT > 0 || match.player.invT > 0 || match.player.ghostT > 0 || gained > 0),
+    `shot uncovers the planted bonus ${code}`,
+  );
+  const first = match.lootAt.slice();
+  match.phase = "shop";
+  startNextRound(match);
+  let moved = 0;
+  for (let i = 0; i < first.length; i++) if (first[i] !== match.lootAt[i]) moved += 1;
+  assert(moved > 20, "bonus spots change the next round");
+}
+
+{
+  const match = createMatch({ seed: 20, difficulty: "normal" });
+  match.phase = "shop";
+  match.points = 6;
+  assert(buy(match, "ghost").ok, "ghost costs 4");
+  assert(match.points === 2, "2 points left");
+  assert(buy(match, "laser").ok, "laser costs the remaining 2");
+  assert(match.upgrades.laser === 1, "laser stays");
+  startNextRound(match);
+  assert(match.player.ghostT === 40, "ghost lasts 40 s");
+  match.player.facing = 2;
+  match.player.moving = false;
+  const spot = ghostSpot(match.player);
+  match.player.energy = 100;
+  match.balls.push({
+    x: spot.x,
+    y: spot.y,
+    vx: -200,
+    vy: 0,
+    age: 0,
+    pen: 2,
+    rockDmg: 1,
+    dmg: 30,
+    r: 3.1,
+    laser: false,
+    owner: "enemy",
+    tx: -99,
+    ty: -99,
+  });
+  step(match, idle, 0.05);
+  assert(match.player.energy === 100, "ghost catches the shot");
+  assert(match.balls.length === 0, "caught shot is gone");
+  const rock = match.player.ty * COLS + (match.player.tx + 1);
+  match.type[rock] = ROCK;
+  match.rock[rock] = 3;
+  match.player.cool = 0;
+  match.player.energy = 90;
+  step(match, { ...idle, shoot: true }, 0.05);
+  assert(match.rock[rock] === 1, `laser bite is 2 (${match.rock[rock]})`);
 }
 
 if (failed) {

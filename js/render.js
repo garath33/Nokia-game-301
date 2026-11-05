@@ -12,6 +12,7 @@ import {
   WALL,
   duckLevel,
   fighterPixel,
+  ghostSpot,
 } from "./sim.js";
 
 export function createView() {
@@ -67,6 +68,8 @@ function lootLabel(id) {
   if (id === "speed") return "Rychlejší chůze";
   if (id === "spread") return "Trojstřel";
   if (id === "jack") return "Zbíječka";
+  if (id === "ghost") return "GhostDuck";
+  if (id === "laser") return "Laser";
   return "I AM INVINCIBLE";
 }
 
@@ -119,6 +122,7 @@ export function drawWorld(ctx, w, h, match, theme, view, time, dt) {
   }
 
   if (enemyVisible(match)) drawDuck(ctx, match.enemy, theme.enemy, theme, time);
+  drawGhost(ctx, match, theme, time);
   drawDuck(ctx, match.player, theme.player, theme, time);
 
   updateBits(ctx, view, dt);
@@ -276,8 +280,23 @@ function drawLamp(ctx, theme, f, time, match, owner) {
 }
 
 function drawBall(ctx, ball, theme) {
-  const color = ball.owner === "player" ? theme.ball : theme.ballEnemy;
+  const color = ball.laser ? "#ff2a2a" : ball.owner === "player" ? theme.ball : theme.ballEnemy;
   const len = Math.hypot(ball.vx, ball.vy) || 1;
+  if (ball.laser) {
+    ctx.strokeStyle = "#ff2a2a";
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(ball.x, ball.y);
+    ctx.lineTo(ball.x - (ball.vx / len) * 34, ball.y - (ball.vy / len) * 34);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#fff5f5";
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
   ctx.strokeStyle = color;
   ctx.globalAlpha = 0.85;
   ctx.lineWidth = 3;
@@ -295,6 +314,17 @@ function drawBall(ctx, ball, theme) {
 }
 
 const CHROME = { body: "#9aa6b2", wing: "#6a737c", beak: "#4e565e", eye: "#ff1a10" };
+const GHOST = { body: "#d7fff8", wing: "#9ee7dc", beak: "#7d8d99", eye: "#e8ffff" };
+
+function drawGhost(ctx, match, theme, time) {
+  const f = match.player;
+  if (!f || f.ghostT <= 0) return;
+  const spot = ghostSpot(f);
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  drawDuckAt(ctx, spot.x, spot.y, f.facing, GHOST, theme, time, false, false, false, false);
+  ctx.restore();
+}
 
 function drawDuck(ctx, f, palette, theme, time) {
   const pos = fighterPixel(f);
@@ -581,6 +611,7 @@ function hudHint(match) {
   const p = match.player;
   if (p.invT > 0) return `I AM INVINCIBLE · ${Math.ceil(p.invT)} s`;
   if (p.jackT > 0) return `Zbíječka · ${Math.ceil(p.jackT)} s. Zem neklade odpor.`;
+  if (p.ghostT > 0) return `GhostDuck · ${Math.ceil(p.ghostT)} s. Kryje střely před tebou.`;
   const onPad = match.pad[p.ty * COLS + p.tx] === 1;
   if (p.lowPower) return "Málo života na probití. Vrať se do krytu.";
   if (p.digging) return `Probíjíš: ${p.digName}. Střela je rychlejší a žere víc.`;

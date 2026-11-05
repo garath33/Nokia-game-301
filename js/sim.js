@@ -163,6 +163,22 @@ export const SHOP = [
     blurb: "30 s. Střely neberou život. Kačenka se zatáhne do kovu.",
   },
   {
+    id: "ghost",
+    cost: 4,
+    max: 1,
+    kind: "charge",
+    name: "GhostDuck",
+    blurb: "40 s. Průsvitná kačena před tebou střílí a schytá střely.",
+  },
+  {
+    id: "laser",
+    cost: 2,
+    max: 1,
+    kind: "rank",
+    name: "Laser",
+    blurb: "Natrvalo. Červený paprsek řeže stěny o 30 % líp.",
+  },
+  {
     id: "armor",
     cost: 4,
     max: 2,
@@ -191,7 +207,7 @@ export function mulberry32(seed) {
 }
 
 export function duckLevel(upgrades) {
-  return 1 + upgrades.power + upgrades.rate + upgrades.armor + (upgrades.speed || 0) + (upgrades.spread || 0);
+  return 1 + upgrades.power + upgrades.rate + upgrades.armor + (upgrades.speed || 0) + (upgrades.spread || 0) + (upgrades.laser || 0);
 }
 
 export function shotPen(power) {
@@ -247,9 +263,8 @@ export function createMatch(opts = {}) {
     round: 1,
     roundScale: 1,
     points: 0,
-    upgrades: { power: 0, rate: 0, armor: 0, speed: 0, spread: 0 },
-    queue: { jack: false, inv: false },
-    loot: 0,
+    upgrades: { power: 0, rate: 0, armor: 0, speed: 0, spread: 0, laser: 0 },
+    queue: { jack: false, inv: false, ghost: false },
     phase: "play",
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
@@ -405,6 +420,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
   }
   if (f.jackT > 0) f.jackT = Math.max(0, f.jackT - dt);
   if (f.invT > 0) f.invT = Math.max(0, f.invT - dt);
+  if (f.ghostT > 0) f.ghostT = Math.max(0, f.ghostT - dt);
   f.cool = Math.max(0, f.cool - dt);
   const onPad = onOwnPad(match, f);
   if (f.armorT > 0 && !onPad && drainOn) f.armorT = Math.max(0, f.armorT - dt);
@@ -448,6 +464,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   const id = ny * COLS + nx;
   const cell = match.type[id];
   if (f.jackT > 0 && cell !== AIR && cell !== PAD && !isBorder(nx, ny)) {
+    if (f.kind === "player") takeLoot(match, nx, ny);
     clearCell(match, nx, ny);
     f.digging = false;
     f.digT = 0;
@@ -497,6 +514,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   if (f.digT < f.digNeed) return;
 
   f.energy -= cost;
+  if (f.kind === "player") takeLoot(match, nx, ny);
   clearCell(match, nx, ny);
   f.digging = false;
   f.digT = 0;
@@ -526,29 +544,46 @@ function tryShoot(match, f) {
   const spread = f.kind === "player" && match.upgrades.spread > 0;
   const facings = spread ? [f.facing, (f.facing + 1) % 8, (f.facing + 7) % 8] : [f.facing];
   const radius = 3.1 * (f.kind === "player" ? 1.2 ** power : 1);
+  const laser = f.kind === "player" && match.upgrades.laser > 0;
   const pos = fighterPixel(f);
   const speed = 360;
-  for (const facing of facings) {
-    const d = DIRS[facing];
-    const len = Math.hypot(d.x, d.y) || 1;
-    match.balls.push({
-      x: pos.x + (d.x / len) * 16,
-      y: pos.y + (d.y / len) * 16,
-      vx: (d.x / len) * speed,
-      vy: (d.y / len) * speed,
-      age: 0,
-      pen: shotPen(power),
-      dmg: ballDamage(match, f, power),
-      r: radius,
-      owner: f.kind,
-      tx: -99,
-      ty: -99,
-    });
+  for (const facing of facings) pushBall(match, f, facing, pos, speed, power, radius, laser);
+  if (f.kind === "player" && f.ghostT > 0) {
+    const spot = ghostSpot(f);
+    pushBall(match, f, f.facing, spot, speed, power, radius, laser);
   }
   pushEvent(match, { t: "shoot", x: f.tx, y: f.ty, kind: f.kind });
   if (f.kind === "player") match.noise = { x: f.tx, y: f.ty, ttl: 1.6, kind: "player" };
   else if (!match.lit[f.ty * COLS + f.tx]) match.shotCue = { x: f.tx, y: f.ty, ttl: 1.15 };
   return true;
+}
+
+function pushBall(match, f, facing, pos, speed, power, radius, laser) {
+  const d = DIRS[facing];
+  const len = Math.hypot(d.x, d.y) || 1;
+  match.balls.push({
+    x: pos.x + (d.x / len) * 16,
+    y: pos.y + (d.y / len) * 16,
+    vx: (d.x / len) * speed,
+    vy: (d.y / len) * speed,
+    age: 0,
+    pen: shotPen(power) * (laser ? 1.3 : 1),
+    rockDmg: laser ? 2 : 1,
+    dmg: ballDamage(match, f, power),
+    r: radius,
+    laser,
+    owner: f.kind,
+    tx: -99,
+    ty: -99,
+  });
+}
+
+export function ghostSpot(f) {
+  const d = DIRS[f.facing];
+  const pos = fighterPixel(f);
+  const len = Math.hypot(d.x, d.y) || 1;
+  const gap = TILE * 1.35;
+  return { x: pos.x + (d.x / len) * gap, y: pos.y + (d.y / len) * gap };
 }
 
 function ballDamage(match, f, power) {
@@ -590,6 +625,11 @@ function updateBalls(match, dt) {
           }
         }
       }
+      if (b.owner !== "player" && ghostBlocks(match, b)) {
+        pushEvent(match, { t: "block", x: match.player.tx, y: match.player.ty });
+        dead = true;
+        break;
+      }
       const hit = fighterAt(match, b);
       if (hit) {
         strike(match, hit, b.dmg);
@@ -606,17 +646,17 @@ function chew(match, b, tx, ty, cell, id) {
   const info = DIG[cell];
   if (!info) return false;
   if (cell === ROCK) {
-    match.rock[id] -= 1;
+    match.rock[id] -= b.rockDmg || 1;
     pushEvent(match, { t: "chip", x: tx, y: ty });
     if (match.rock[id] <= 0) {
       clearCell(match, tx, ty);
-      if (b.owner === "player") maybeLoot(match, tx, ty);
+      if (b.owner === "player") takeLoot(match, tx, ty);
     }
     return true;
   }
   if (b.pen >= info.pen) {
+    if (b.owner === "player") takeLoot(match, tx, ty);
     clearCell(match, tx, ty);
-    if (b.owner === "player") maybeLoot(match, tx, ty);
     b.pen -= info.pen;
     pushEvent(match, { t: "chip", x: tx, y: ty });
     return b.pen <= 0;
@@ -989,27 +1029,59 @@ function isBorder(x, y) {
   return x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2;
 }
 
-const LOOT_IDS = ["power", "rate", "speed", "spread", "jack", "inv"];
+const LOOT_IDS = ["power", "rate", "speed", "spread", "jack", "inv", "ghost", "laser"];
 
-function maybeLoot(match, x, y) {
-  match.loot += 1;
-  if (match.loot < LOOT_EVERY) return;
-  match.loot = 0;
-  const rng = mulberry32((match.seed + x * 17 + y * 131 + match.round * 997) >>> 0);
-  let id = LOOT_IDS[(rng() * LOOT_IDS.length) | 0];
-  for (let n = 0; n < LOOT_IDS.length; n++) {
-    if (lootOpen(match, id)) break;
-    id = LOOT_IDS[(LOOT_IDS.indexOf(id) + 1) % LOOT_IDS.length];
+function plantLoot(match, rng) {
+  match.lootAt = new Uint8Array(COLS * ROWS);
+  const cells = [];
+  for (let i = 0; i < match.type.length; i++) {
+    const cell = match.type[i];
+    if (cell === SAND || cell === SOIL || cell === CLAY || cell === GRAVEL || cell === ROCK) cells.push(i);
   }
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = (rng() * (i + 1)) | 0;
+    const swap = cells[i];
+    cells[i] = cells[j];
+    cells[j] = swap;
+  }
+  const deck = LOOT_IDS.slice();
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = (rng() * (i + 1)) | 0;
+    const swap = deck[i];
+    deck[i] = deck[j];
+    deck[j] = swap;
+  }
+  let di = 0;
+  for (let n = LOOT_EVERY - 1; n < cells.length; n += LOOT_EVERY) {
+    match.lootAt[cells[n]] = LOOT_IDS.indexOf(deck[di % deck.length]) + 1;
+    di += 1;
+  }
+}
+
+function takeLoot(match, x, y) {
+  if (!match.lootAt) return;
+  const i = y * COLS + x;
+  const code = match.lootAt[i];
+  if (!code) return;
+  match.lootAt[i] = 0;
+  const id = LOOT_IDS[code - 1];
   if (!lootOpen(match, id)) return;
   if (id === "jack") match.player.jackT = 20;
   else if (id === "inv") match.player.invT = 30;
+  else if (id === "ghost") match.player.ghostT = 40;
   else match.upgrades[id] += 1;
   pushEvent(match, { t: "loot", x, y, id });
 }
 
+function ghostBlocks(match, ball) {
+  const f = match.player;
+  if (!f || f.ghostT <= 0) return false;
+  const spot = ghostSpot(f);
+  return Math.hypot(spot.x - ball.x, spot.y - ball.y) < TILE * 0.42;
+}
+
 function lootOpen(match, id) {
-  if (id === "jack" || id === "inv") return true;
+  if (id === "jack" || id === "inv" || id === "ghost") return true;
   const item = SHOP.find((entry) => entry.id === id);
   return item && match.upgrades[id] < item.max;
 }
@@ -1057,6 +1129,7 @@ function buildMap(match, rng) {
   for (let i = 0; i < match.type.length; i++) {
     if (match.type[i] === ROCK) match.rock[i] = 3;
   }
+  plantLoot(match, rng);
 
   match.player = makeFighter("player", pair.px, pair.py);
   match.enemy = makeFighter("enemy", pair.ex, pair.ey);
@@ -1066,8 +1139,10 @@ function buildMap(match, rng) {
   rearm(match, match.enemy);
   if (match.queue.jack) match.player.jackT = 20;
   if (match.queue.inv) match.player.invT = 30;
+  if (match.queue.ghost) match.player.ghostT = 40;
   match.queue.jack = false;
   match.queue.inv = false;
+  match.queue.ghost = false;
   for (let i = 0; i < match.pad.length; i++) {
     if (match.pad[i] === 1) match.seen[i] = 1;
   }
@@ -1159,6 +1234,7 @@ function makeFighter(kind, tx, ty) {
     hitGrace: 0,
     jackT: 0,
     invT: 0,
+    ghostT: 0,
     cool: 0,
     armorT: 0,
     armorLevel: 0,

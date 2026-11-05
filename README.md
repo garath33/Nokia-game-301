@@ -4,7 +4,7 @@ Hra je určená pro Nokii 301. Displej je na výšku, 240×320 bodů, úhlopří
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Dobít se dá jen ve vlastním krytu, pomalu, až na 100 %. Na té stovce se znovu zapne pancíř.
 
-Sestřel dá **2 body**. V DuckShopu stojí vylepšení 2 body, pancíř 4. Každých 30 políček rozbitých střelou může ve stěně zůstat nález. Hráč začíná každé kolo vlevo, soupeř vpravo.
+Sestřel dá **2 body**. V DuckShopu stojí vylepšení 2 body, GhostDuck a pancíř 4. V mapě je nález zhruba na každých 30 políčkách a každé kolo leží jinde. Hráč začíná každé kolo vlevo, soupeř vpravo.
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet.
 

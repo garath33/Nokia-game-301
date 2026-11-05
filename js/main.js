@@ -425,6 +425,8 @@ function renderShop() {
     spread: match.upgrades.spread ? "Trojstřel je zapnutý." : "Jeden nákup stačí.",
     jack: match.queue.jack ? "Připraveno na začátek dalšího kola." : "Zapne se na začátku kola.",
     inv: match.queue.inv ? "Připraveno na začátek dalšího kola." : "Zapne se na začátku kola.",
+    ghost: match.queue.ghost ? "Připraveno na začátek dalšího kola." : "40 s. Dá se počkat, až budou 4 body.",
+    laser: match.upgrades.laser ? "Paprsek už máš natrvalo." : "Jednou a zůstane.",
     armor: load.nextArmor
       ? `Další pancíř: ${load.nextArmor.seconds} s a ${load.nextArmor.absorb} % zásahu schová pancíř.`
       : `Pancíř ${load.armor.seconds} s, kryje ${load.armor.absorb} %. Znovu se zapne až na 100 % života.`,
