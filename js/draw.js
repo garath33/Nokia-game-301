@@ -3,7 +3,6 @@ import { COLS } from './logic.js';
 const FEATHER = '#c084fc';
 const FEATHER_DEEP = '#6d28d9';
 const TEAL = '#2ee6d6';
-const TEAL_DEEP = '#0f8f86';
 const PINK = '#ff4d9a';
 const INK = '#1a0a24';
 const GOLD = '#ffd24a';
@@ -128,63 +127,64 @@ function drawDuckFront(ctx, x, y, size, blink) {
   const r = size / 2;
   ctx.save();
   ctx.translate(x, y);
+
   ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
   ctx.beginPath();
-  ctx.ellipse(0, r * 1.05, r * 0.72, r * 0.16, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, r * 1.08, r * 0.62, r * 0.12, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = TEAL;
   ctx.beginPath();
-  ctx.moveTo(-r * 0.18, -r * 0.75);
-  ctx.lineTo(-r * 0.02, -r * 1.45);
-  ctx.lineTo(r * 0.16, -r * 0.62);
+  ctx.moveTo(-r * 0.14, -r * 0.78);
+  ctx.lineTo(-r * 0.02, -r * 1.38);
+  ctx.lineTo(r * 0.1, -r * 0.74);
   ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(r * 0.05, -r * 0.62);
-  ctx.lineTo(r * 0.28, -r * 1.2);
-  ctx.lineTo(r * 0.42, -r * 0.48);
+  ctx.moveTo(r * 0.04, -r * 0.68);
+  ctx.lineTo(r * 0.24, -r * 1.12);
+  ctx.lineTo(r * 0.34, -r * 0.6);
   ctx.fill();
 
-  const head = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.15, 0, 0, r * 1.05);
-  head.addColorStop(0, '#e4c7ff');
-  head.addColorStop(0.45, FEATHER);
+  const head = ctx.createRadialGradient(-r * 0.32, -r * 0.42, r * 0.12, 0, 0, r);
+  head.addColorStop(0, '#ead4ff');
+  head.addColorStop(0.48, FEATHER);
   head.addColorStop(1, FEATHER_DEEP);
   ctx.fillStyle = head;
   ctx.beginPath();
   ctx.ellipse(0, 0, r * 0.92, r, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#8ef7ee';
+  ctx.fillStyle = '#7ef6ee';
   ctx.beginPath();
-  ctx.ellipse(0, r * 0.48, r * 0.5, r * 0.34, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, r * 0.66, r * 0.36, r * 0.2, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = TEAL;
-  ctx.beginPath();
-  ctx.ellipse(0, r * 0.16, r * 0.3, r * 0.18, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = TEAL_DEEP;
-  ctx.beginPath();
-  ctx.ellipse(0, r * 0.2, r * 0.16, r * 0.06, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  const lens = r * 0.4;
-  const gap = r * 0.46;
-  const gy = -r * 0.16;
+  const lens = r * 0.34;
+  const gap = r * 0.4;
+  const gy = -r * 0.2;
   drawLens(ctx, -gap, gy, lens, blink, true);
   drawLens(ctx, gap, gy, lens, blink, true);
   ctx.strokeStyle = PINK;
-  ctx.lineWidth = Math.max(3, r * 0.09);
+  ctx.lineWidth = Math.max(2.5, r * 0.075);
   ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(-gap + lens * 0.82, gy);
-  ctx.lineTo(gap - lens * 0.82, gy);
-  ctx.moveTo(-gap - lens * 0.75, gy);
-  ctx.lineTo(-gap - lens * 1.35, gy + lens * 0.45);
-  ctx.moveTo(gap + lens * 0.75, gy);
-  ctx.lineTo(gap + lens * 1.35, gy + lens * 0.45);
+  ctx.moveTo(-gap + lens * 0.78, gy);
+  ctx.lineTo(gap - lens * 0.78, gy);
   ctx.stroke();
+
+  drawBeak(ctx, r);
   ctx.restore();
+}
+
+function drawBeak(ctx, r) {
+  ctx.fillStyle = TEAL;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.18, r * 0.2);
+  ctx.quadraticCurveTo(-r * 0.22, r * 0.32, 0, r * 0.42);
+  ctx.quadraticCurveTo(r * 0.22, r * 0.32, r * 0.18, r * 0.2);
+  ctx.quadraticCurveTo(0, r * 0.25, -r * 0.18, r * 0.2);
+  ctx.closePath();
+  ctx.fill();
 }
 
 function drawLens(ctx, x, y, radius, blink, shine) {

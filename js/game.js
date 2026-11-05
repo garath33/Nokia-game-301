@@ -230,6 +230,7 @@ function showChrome() {
   marquee.hidden = screen !== 'home';
   hud.hidden = screen === 'home';
   lcd.classList.toggle('sheet-cover', screen === 'over' || screen === 'pause');
+  lcd.classList.toggle('is-home', screen === 'home');
   renderMute();
 }
 

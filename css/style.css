@@ -184,9 +184,13 @@ button { cursor: pointer; }
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.18) 0 1px,
+    rgba(0, 0, 0, 0.12) 0 1px,
     transparent 1px 4px
   );
+}
+
+.lcd.is-home .glass::after {
+  display: none;
 }
 
 #banner, #countdown {
