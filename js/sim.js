@@ -18,7 +18,7 @@ export const GRAVEL = 7;
 
 export const WINS_OPTIONS = [3, 5, 8];
 
-export const SHOT_COST = 8.5;
+export const SHOT_COST = 5.1;
 
 export const DIRS = [
   { x: 0, y: -1 },
@@ -64,9 +64,7 @@ export const DIFFICULTIES = {
     drain: 1.65,
     regen: 9,
     dig: 0.85,
-    speed: 0.78,
-    fire: 0.72,
-    dmg: 0.78,
+    dmg: 0.8,
     think: 0.62,
     hear: 13,
     radar: 7.5,
@@ -75,7 +73,7 @@ export const DIFFICULTIES = {
     mix: [0.36, 0.38, 0.16, 0.07, 0.03],
     pillar: 6,
     pillarKeep: 0.38,
-    blurb: "Pomalejší soupeř, měkčí zem a rychlejší návrat života.",
+    blurb: "Měkčí zem, slabší zásahy a rychlejší návrat života.",
   },
   normal: {
     id: "normal",
@@ -83,8 +81,6 @@ export const DIFFICULTIES = {
     drain: 2.25,
     regen: 6.5,
     dig: 1,
-    speed: 1,
-    fire: 1,
     dmg: 1,
     think: 0.4,
     hear: 18,
@@ -102,9 +98,7 @@ export const DIFFICULTIES = {
     drain: 2.75,
     regen: 5.2,
     dig: 1.15,
-    speed: 1.08,
-    fire: 1.22,
-    dmg: 1.12,
+    dmg: 1.15,
     think: 0.28,
     hear: 22,
     radar: 2.3,
@@ -168,7 +162,7 @@ export function shotPen(power) {
 }
 
 export function shotDamage(power) {
-  return 26 * (1 + 0.22 * power);
+  return 30 * (1 + 0.22 * power);
 }
 
 export function fireCooldown(rate) {
@@ -334,8 +328,7 @@ function stepOnce(match, input, dt) {
 
   updateFighter(match, player, dt, drainOn, 1);
   if (match.phase !== "play") return;
-  const enemySpeed = match.diff.speed * match.roundScale;
-  updateFighter(match, match.enemy, dt, drainOn, enemySpeed);
+  updateFighter(match, match.enemy, dt, drainOn, 1);
   if (match.phase !== "play") return;
   updateBalls(match, dt);
   resolveDeaths(match);
@@ -459,9 +452,7 @@ function tryShoot(match, f) {
   if (f.energy <= SHOT_COST + 0.35) return false;
   f.energy -= SHOT_COST;
   const rate = f.kind === "player" ? match.upgrades.rate : 0;
-  let cool = fireCooldown(rate);
-  if (f.kind === "enemy") cool /= match.diff.fire;
-  f.cool = cool;
+  f.cool = fireCooldown(rate);
   const power = f.kind === "player" ? match.upgrades.power : 0;
   const d = DIRS[f.facing];
   const len = Math.hypot(d.x, d.y) || 1;
@@ -487,7 +478,7 @@ function tryShoot(match, f) {
 
 function ballDamage(match, f, power) {
   let dmg = shotDamage(power);
-  if (f.kind === "enemy") dmg *= match.diff.dmg * match.roundScale;
+  if (f.kind === "enemy") dmg *= match.diff.dmg;
   return dmg;
 }
 
@@ -680,7 +671,7 @@ function ai(match, dt) {
     e.pathAge = 0.6;
     e.goalX = goal.x;
     e.goalY = goal.y;
-    e.think = match.diff.think;
+    e.think = match.diff.think / match.roundScale;
   }
 
   if (e.path && e.path.length && e.path[0].x === e.tx && e.path[0].y === e.ty) e.path.shift();
@@ -965,8 +956,8 @@ function buildMap(match, rng) {
   }
 
   const pair = placeBunkers(match, rng);
-  carveBunker(match, pair.px, pair.py, 1, pair.pDoor);
-  carveBunker(match, pair.ex, pair.ey, 2, pair.eDoor);
+  carveBunker(match, pair.px, pair.py, 1);
+  carveBunker(match, pair.ex, pair.ey, 2);
 
   for (let i = 0; i < match.type.length; i++) {
     if (match.type[i] === ROCK) match.rock[i] = 3;
@@ -1006,24 +997,10 @@ function placeBunkers(match, rng) {
 }
 
 function doors(px, py, ex, ey) {
-  return {
-    px,
-    py,
-    ex,
-    ey,
-    pDoor: mainDir(px, py, ex, ey),
-    eDoor: mainDir(ex, ey, px, py),
-  };
+  return { px, py, ex, ey };
 }
 
-function mainDir(ax, ay, bx, by) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  if (Math.abs(dx) >= Math.abs(dy)) return { x: Math.sign(dx) || 1, y: 0 };
-  return { x: 0, y: Math.sign(dy) || 1 };
-}
-
-function carveBunker(match, cx, cy, owner, door) {
+function carveBunker(match, cx, cy, owner) {
   const hw = 4;
   const hh = 3;
   for (let y = cy - hh; y <= cy + hh; y++) {
@@ -1041,19 +1018,22 @@ function carveBunker(match, cx, cy, owner, door) {
       }
     }
   }
-  const dx = cx + door.x * hw;
-  const dy = cy + door.y * hh;
-  const doorId = dy * COLS + dx;
-  match.type[doorId] = AIR;
-  match.pad[doorId] = 0;
-  for (let s = 1; s <= 3; s++) {
-    const x = dx + door.x * s;
-    const y = dy + door.y * s;
-    if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) continue;
-    const i = y * COLS + x;
-    match.type[i] = AIR;
-    match.pad[i] = 0;
-    match.rock[i] = 0;
+  const vents = [
+    { x: 1, y: 0, span: hw },
+    { x: -1, y: 0, span: hw },
+    { x: 0, y: 1, span: hh },
+    { x: 0, y: -1, span: hh },
+  ];
+  for (const door of vents) {
+    for (let s = 0; s <= 3; s++) {
+      const x = cx + door.x * (door.span + s);
+      const y = cy + door.y * (door.span + s);
+      if (x < 1 || y < 1 || x >= COLS - 1 || y >= ROWS - 1) continue;
+      const i = y * COLS + x;
+      match.type[i] = AIR;
+      match.pad[i] = 0;
+      match.rock[i] = 0;
+    }
   }
 }
 

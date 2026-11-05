@@ -15,6 +15,7 @@ import {
   createMatch,
   facingToward,
   findPath,
+  shotDamage,
   shotPen,
   startNextRound,
   step,
@@ -296,6 +297,72 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
 {
   const match = createMatch({ seed: 23, winsNeeded: 4 });
   assert(match.winsNeeded === 3, "only 3, 5 or 8");
+}
+
+{
+  assert(SHOT_COST === 5.1, "shot costs 40% less than 8.5");
+  assert(shotDamage(0) === 30, "plain hit is 30% of life");
+  for (const difficulty of ["easy", "normal", "hard"]) {
+    const match = createMatch({ seed: 11, difficulty });
+    const cx = match.player.homeX;
+    const cy = match.player.homeY;
+    const doors = [
+      [cx + 4, cy],
+      [cx - 4, cy],
+      [cx, cy + 3],
+      [cx, cy - 3],
+    ];
+    for (const [x, y] of doors) {
+      const dx = Math.sign(x - cx);
+      const dy = Math.sign(y - cy);
+      assert(match.type[y * COLS + x] === AIR, `${difficulty} door ${x},${y}`);
+      assert(match.type[(y + dy) * COLS + (x + dx)] === AIR, `${difficulty} vent ${dx},${dy}`);
+    }
+    assert(match.type[(cy - 3) * COLS + (cx - 4)] === WALL, `${difficulty} corner stays shut`);
+  }
+}
+
+{
+  const match = createMatch({ seed: 12, difficulty: "hard" });
+  match.roundScale = 1.45;
+  match.grace = 3;
+  const y = 20;
+  for (let x = 0; x < COLS; x++) {
+    match.type[y * COLS + x] = AIR;
+    match.pad[y * COLS + x] = 0;
+  }
+  match.enemy.tx = 18;
+  match.enemy.ty = y;
+  match.enemy.moving = false;
+  match.enemy.energy = 100;
+  match.player.tx = 28;
+  match.player.ty = y;
+  match.player.moving = false;
+  match.player.energy = 100;
+  const pe = match.player.tx;
+  const ee = match.enemy.tx;
+  step(match, { ...idle, right: true }, 1);
+  assert(match.player.tx - pe === match.enemy.tx - ee, `same tiles ${match.player.tx - pe} vs ${match.enemy.tx - ee}`);
+}
+
+{
+  const match = createMatch({ seed: 13, difficulty: "normal" });
+  match.roundScale = 1.5;
+  match.grace = 0;
+  match.diff.drain = 0;
+  const y = match.player.ty;
+  for (let x = 1; x < COLS - 1; x++) {
+    match.type[y * COLS + x] = AIR;
+    match.pad[y * COLS + x] = 0;
+  }
+  match.enemy.tx = match.player.tx + 4;
+  match.enemy.ty = y;
+  match.enemy.moving = false;
+  match.player.moving = false;
+  match.player.energy = 100;
+  match.enemy.energy = 100;
+  step(match, idle, 0.45);
+  close(match.player.energy, 70, 0.05, "one hit takes 30% even later in the match");
 }
 
 if (failed) {

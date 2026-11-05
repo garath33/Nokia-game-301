@@ -26,7 +26,9 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 - Každé kolo si soupeř postaví kryt jinde. Každá hra začíná jiným rozložením.
 - Na radaru se občas mihne nepřesná tečka. Blízké hrabání je slyšet.
 - Světlo z kačenky neprochází hlínou. Vlastní tunely zůstávají v paměti tmavší.
-- Na těžké obtížnosti má soupeř od začátku krátký pancíř. S každým dalším kolem je ostřejší.
+- Zásah bez vylepšení bere 30 % života. Střela stojí 5,1 života.
+- Z krytu se jde ven na všechny čtyři strany. Obě kačenky jsou stejně rychlé, i v pozdějších kolech.
+- Na těžké obtížnosti má soupeř od začátku krátký pancíř. S každým dalším kolem reaguje rychleji, ale neběží rychleji.
 - Čím vyšší hustota, tím dražší hrabání. Skála se míčkem láme na třikrát.
 
 ## Test
