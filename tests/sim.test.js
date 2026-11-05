@@ -6,7 +6,9 @@ import {
   PAD,
   ROCK,
   SAND,
+  SHELTER_REGEN,
   SHOT_COST,
+  SHOT_FLOOR,
   SOIL,
   WALL,
   densityOf,
@@ -112,7 +114,7 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   match.grace = 0;
   match.player.energy = 40;
   step(match, idle, 1);
-  close(match.player.energy, 40 + match.diff.regen, 0.2, "regen on own pad");
+  close(match.player.energy, 40 + match.diff.regen * SHELTER_REGEN, 0.2, "regen on own pad");
   match.enemy.tx = match.player.tx;
   match.enemy.ty = match.player.ty;
   match.enemy.energy = 40;
@@ -296,6 +298,90 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
 {
   const match = createMatch({ seed: 23, winsNeeded: 4 });
   assert(match.winsNeeded === 3, "only 3, 5 or 8");
+}
+
+{
+  const match = createMatch({ seed: 24, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.player.energy = 4;
+  const homeX = match.player.tx;
+  const homeY = match.player.ty;
+  step(match, shoot, 1.2);
+  assert(match.phase === "play", "shelter shots do not end the round");
+  assert(match.player.alive, "player survives an empty magazine");
+  assert(match.balls.length === 0, "no ball without a paid shot");
+  close(match.player.energy, 4, 0.05, "unpaid shot spends nothing");
+  assert(match.player.holdShot, "duck waits for a real shot");
+  step(match, { ...shoot, right: true, up: true }, 0.4);
+  assert(match.player.tx === homeX && match.player.ty === homeY, "waiting duck stays in the shelter");
+  match.diff.regen = 30;
+  step(match, shoot, 0.8);
+  assert(match.phase === "play" && match.player.energy > 0, "charged shelter shot leaves the duck alive");
+  assert(match.balls.length >= 1, "shot fires once life covers it");
+  assert(match.player.energy > SHOT_FLOOR - 0.05, "shelter shot keeps a sliver of life");
+}
+
+{
+  const match = createMatch({ seed: 26, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.player.energy = SHOT_COST + SHOT_FLOOR + 0.2;
+  const homeX = match.player.tx;
+  const homeY = match.player.ty;
+  step(match, shoot, 0.05);
+  assert(match.balls.length === 1, "last affordable shelter shot still fires");
+  assert(match.player.energy > 0 && match.phase === "play", "that shot does not kill");
+  assert(match.player.holdShot, "spent shot pins the duck");
+  step(match, { ...idle, right: true }, 0.6);
+  assert(match.player.tx === homeX && match.player.ty === homeY, "no leaving until a real shot is affordable");
+  match.diff.regen = 40;
+  step(match, idle, 0.4);
+  assert(!match.player.holdShot, "pin releases once a shot is affordable");
+  assert(match.player.energy > SHOT_COST + SHOT_FLOOR, "life covers a real shot");
+}
+
+{
+  const match = createMatch({ seed: 25, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  const shotId = y * COLS + x;
+  const digX = match.player.tx;
+  const digY = match.player.ty + 1;
+  const digId = digY * COLS + digX;
+  match.ground[digId] = SOIL;
+  match.type[shotId] = SOIL;
+  match.pad[shotId] = 0;
+  match.type[digId] = SOIL;
+  match.pad[digId] = 0;
+  match.player.facing = 2;
+  match.player.energy = 80;
+  step(match, shoot, 0.05);
+  step(match, idle, 0.35);
+  assert(match.type[shotId] === AIR, "shot opens the tile");
+  assert(match.shot[shotId] === 1, "shot is remembered");
+  match.player.energy = 80;
+  match.player.moving = false;
+  match.player.tx = match.player.homeX;
+  match.player.ty = match.player.homeY;
+  match.player.wish = null;
+  step(match, { ...idle, down: true }, 0.8);
+  assert(match.type[digId] === AIR, "dig opens a tile");
+  assert(!match.shot[digId], "digging is not a shot hole");
+  const ground = match.ground;
+  match.phase = "shop";
+  assert(startNextRound(match), "round keeps the earth");
+  assert(match.ground === ground, "ground lasts the match");
+  assert(match.shot[shotId] === 1, "shot memory survives the round");
+  const covered = match.pad[shotId] !== 0 || match.type[shotId] === WALL;
+  if (!covered) assert(match.type[shotId] === AIR, "shot hole stays open");
+  if (match.pad[digId] === 0 && match.type[digId] !== WALL) {
+    assert(match.type[digId] === match.ground[digId], "dug earth grows back");
+  }
+  const fresh = createMatch({ seed: 25, difficulty: "normal" });
+  assert(!fresh.shot.some((v) => v), "a new match forgets shot walls");
 }
 
 if (failed) {

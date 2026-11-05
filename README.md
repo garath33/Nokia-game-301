@@ -1,6 +1,6 @@
 # Kačík
 
-Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Dobít se dá jen ve vlastním krytu, pomalu, až na 100 %. Na té stovce se znovu zapne pancíř.
+Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
 Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, pancíř 4. Body se mezi koly neztratí, takže se dají schovat.
 
@@ -28,6 +28,7 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 - Světlo z kačenky neprochází hlínou. Vlastní tunely zůstávají v paměti tmavší.
 - Na těžké obtížnosti má soupeř od začátku krátký pancíř. S každým dalším kolem je ostřejší.
 - Čím vyšší hustota, tím dražší hrabání. Skála se míčkem láme na třikrát.
+- Pole prostřelené míčkem zůstane otevřené až do nového zápasu. Vydlabaný tunel se mezi koly zavře. Nový zápas postaví novou zem.
 
 ## Test
 

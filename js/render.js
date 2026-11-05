@@ -534,6 +534,7 @@ function armorFraction(f) {
 function hudHint(match) {
   const p = match.player;
   const onPad = match.pad[p.ty * COLS + p.tx] === 1;
+  if (p.holdShot) return "V krytu se na výstřel čeká. Život se dobíjí.";
   if (p.lowPower) return "Málo života na probití. Vrať se do krytu.";
   if (p.digging) return `Probíjíš: ${p.digName}. Střela je rychlejší a žere víc.`;
   if (onPad && p.energy < 99.5) {

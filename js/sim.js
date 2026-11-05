@@ -1,7 +1,9 @@
 // Tunik — top-down tunnel duel.
 // Both ducks share one rule set: digging resists, shots chew faster and cost more
 // life, life drains on its own, and only your own shelter refills it.
-// Armor rearms only when life reaches 100%.
+// The shelter refills 40% faster. A shot there cannot spend the last of your life:
+// the duck holds still until a real shot is paid for.
+// Tiles a shot opens stay open for the rest of the match. Armor rearms at 100%.
 
 export const COLS = 76;
 export const ROWS = 42;
@@ -19,6 +21,8 @@ export const GRAVEL = 7;
 export const WINS_OPTIONS = [3, 5, 8];
 
 export const SHOT_COST = 8.5;
+export const SHOT_FLOOR = 1;
+export const SHELTER_REGEN = 1.4;
 
 export const DIRS = [
   { x: 0, y: -1 },
@@ -359,11 +363,14 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
 
   if (onPad) {
     const prev = f.energy;
-    f.energy = Math.min(100, f.energy + match.diff.regen * dt);
+    f.energy = Math.min(100, f.energy + match.diff.regen * SHELTER_REGEN * dt);
     if (prev < 99.5 && f.energy >= 100) rearm(match, f);
   } else if (drainOn) {
     f.energy -= match.diff.drain * dt;
   }
+
+  const waiting = playerWaitsForShot(match, f);
+  if (waiting) pinFighter(f);
 
   if (f.moving) {
     f.mt += dt / f.dur;
@@ -373,7 +380,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
       f.tx = f.bx;
       f.ty = f.by;
     }
-  } else if (f.wish != null) {
+  } else if (!waiting && f.wish != null) {
     tryMoveOrDig(match, f, dt, speedMul);
   } else {
     f.digging = false;
@@ -381,8 +388,37 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
     f.lowPower = false;
   }
 
-  if (f.wantShot && (f.kind === "player" || match.grace <= 0)) tryShoot(match, f);
+  if (!waiting && f.wantShot && (f.kind === "player" || match.grace <= 0)) tryShoot(match, f);
   f.wantShot = false;
+}
+
+function playerWaitsForShot(match, f) {
+  if (f.kind !== "player") return false;
+  if (!onOwnPad(match, f)) {
+    f.holdShot = false;
+    return false;
+  }
+  if (f.energy > SHOT_COST + SHOT_FLOOR) {
+    f.holdShot = false;
+    return false;
+  }
+  if (f.wantShot) f.holdShot = true;
+  return f.holdShot;
+}
+
+function pinFighter(f) {
+  if (f.moving) {
+    f.moving = false;
+    f.tx = f.ax;
+    f.ty = f.ay;
+    f.bx = f.tx;
+    f.by = f.ty;
+    f.mt = 1;
+  }
+  f.wish = null;
+  f.digging = false;
+  f.digT = 0;
+  f.lowPower = false;
 }
 
 function tryMoveOrDig(match, f, dt, speedMul) {
@@ -456,8 +492,15 @@ function startMove(f, nx, ny, dur) {
 
 function tryShoot(match, f) {
   if (f.cool > 0) return false;
+  if (f.kind === "player" && onOwnPad(match, f) && f.energy <= SHOT_COST + SHOT_FLOOR) {
+    f.holdShot = true;
+    return false;
+  }
   if (f.energy <= SHOT_COST + 0.35) return false;
   f.energy -= SHOT_COST;
+  if (f.kind === "player" && onOwnPad(match, f) && f.energy <= SHOT_COST + SHOT_FLOOR) {
+    f.holdShot = true;
+  }
   const rate = f.kind === "player" ? match.upgrades.rate : 0;
   let cool = fireCooldown(rate);
   if (f.kind === "enemy") cool /= match.diff.fire;
@@ -542,11 +585,11 @@ function chew(match, b, tx, ty, cell, id) {
   if (cell === ROCK) {
     match.rock[id] -= 1;
     pushEvent(match, { t: "chip", x: tx, y: ty });
-    if (match.rock[id] <= 0) clearCell(match, tx, ty);
+    if (match.rock[id] <= 0) openByShot(match, tx, ty);
     return true;
   }
   if (b.pen >= info.pen) {
-    clearCell(match, tx, ty);
+    openByShot(match, tx, ty);
     b.pen -= info.pen;
     pushEvent(match, { t: "chip", x: tx, y: ty });
     return b.pen <= 0;
@@ -923,45 +966,76 @@ function clearCell(match, x, y) {
   match.seen[i] = 1;
 }
 
+function openByShot(match, x, y) {
+  clearCell(match, x, y);
+  const i = y * COLS + x;
+  if (match.shot && x >= 2 && y >= 2 && x < COLS - 2 && y < ROWS - 2) match.shot[i] = 1;
+}
+
+function reopenShots(match) {
+  if (!match.shot) return;
+  for (let i = 0; i < match.shot.length; i++) {
+    if (!match.shot[i]) continue;
+    const x = i % COLS;
+    const y = (i / COLS) | 0;
+    if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) continue;
+    match.type[i] = AIR;
+    match.rock[i] = 0;
+    match.seen[i] = 1;
+  }
+}
+
 function pushEvent(match, event) {
   match.events.push(event);
   if (match.events.length > 48) match.events.shift();
 }
 
 function buildMap(match, rng) {
-  match.type.fill(SOIL);
-  match.pad.fill(0);
-  match.rock.fill(0);
-  match.seen.fill(0);
-  match.lit.fill(0);
-  const seed = (rng() * 1e9) | 0;
+  if (!match.ground) {
+    match.type.fill(SOIL);
+    match.pad.fill(0);
+    match.rock.fill(0);
+    match.seen.fill(0);
+    match.lit.fill(0);
+    const seed = (rng() * 1e9) | 0;
 
-  for (let y = 0; y < ROWS; y++) {
-    for (let x = 0; x < COLS; x++) {
-      const i = y * COLS + x;
-      if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) {
-        match.type[i] = WALL;
-        continue;
-      }
-      match.type[i] = pickMaterial(regionNoise(x, y, seed), match.diff.mix);
-      if (isPillar(x, y, seed, match.diff)) match.type[i] = WALL;
-    }
-  }
-
-  const blobs = match.diff.rocks;
-  for (let b = 0; b < blobs; b++) {
-    const cx = 4 + ((rng() * (COLS - 8)) | 0);
-    const cy = 4 + ((rng() * (ROWS - 8)) | 0);
-    const rad = 1.2 + rng() * 2.4;
-    for (let y = -3; y <= 3; y++) {
-      for (let x = -3; x <= 3; x++) {
-        if (x * x + y * y > rad * rad) continue;
-        const tx = cx + x;
-        const ty = cy + y;
-        if (tx < 2 || ty < 2 || tx >= COLS - 2 || ty >= ROWS - 2) continue;
-        match.type[ty * COLS + tx] = ROCK;
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const i = y * COLS + x;
+        if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) {
+          match.type[i] = WALL;
+          continue;
+        }
+        match.type[i] = pickMaterial(regionNoise(x, y, seed), match.diff.mix);
+        if (isPillar(x, y, seed, match.diff)) match.type[i] = WALL;
       }
     }
+
+    const blobs = match.diff.rocks;
+    for (let b = 0; b < blobs; b++) {
+      const cx = 4 + ((rng() * (COLS - 8)) | 0);
+      const cy = 4 + ((rng() * (ROWS - 8)) | 0);
+      const rad = 1.2 + rng() * 2.4;
+      for (let y = -3; y <= 3; y++) {
+        for (let x = -3; x <= 3; x++) {
+          if (x * x + y * y > rad * rad) continue;
+          const tx = cx + x;
+          const ty = cy + y;
+          if (tx < 2 || ty < 2 || tx >= COLS - 2 || ty >= ROWS - 2) continue;
+          match.type[ty * COLS + tx] = ROCK;
+        }
+      }
+    }
+
+    match.ground = new Uint8Array(match.type);
+    match.shot = new Uint8Array(match.type.length);
+  } else {
+    match.type.set(match.ground);
+    match.pad.fill(0);
+    match.rock.fill(0);
+    match.seen.fill(0);
+    match.lit.fill(0);
+    reopenShots(match);
   }
 
   const pair = placeBunkers(match, rng);
@@ -1079,6 +1153,7 @@ function makeFighter(kind, tx, ty) {
     digY: ty,
     digName: "",
     lowPower: false,
+    holdShot: false,
     energy: 100,
     cool: 0,
     armorT: 0,
