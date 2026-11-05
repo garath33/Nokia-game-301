@@ -59,11 +59,24 @@
       <div id="swatches" class="swatches"></div>
       <div class="help">
         <div><strong>Pohyb</strong><span>Šipky nebo WASD hrabou tunel. Šikmo jde taky.</span></div>
-        <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku.</span></div>
+        <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku. Za ním zůstane krátká stopa.</span></div>
         <div><strong>Body</strong><span>Sestřel dá 2 body. Účinnost a kadence stojí 2, pancíř 4.</span></div>
       </div>
       <p id="best" class="best"></p>
-      <button id="mute" type="button">Zvuk: zapnuto</button>
+      <div class="row">
+        <button id="music" type="button">Hudba: zapnuto</button>
+        <button id="shots" type="button">Rány: zapnuto</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="offer" class="overlay hidden">
+    <div class="card">
+      <h2>Kolo je tvoje</h2>
+      <p id="offer-copy" class="lead"></p>
+      <button id="offer-shop" class="primary" type="button">DO OBCHODU</button>
+      <button id="offer-skip" type="button">DALŠÍ KOLO BEZ OBCHODU</button>
+      <p class="keys">Enter hraje dál. O otevře obchod. Body zůstanou, i když obchod vynecháš.</p>
     </div>
   </section>
 

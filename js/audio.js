@@ -15,7 +15,8 @@ const BASS = [
 
 export function createAudio() {
   let ctx = null;
-  let muted = false;
+  let music = "on";
+  let shotsOn = true;
   let unlocked = false;
   let musicTimer = null;
   let musicOn = false;
@@ -24,7 +25,6 @@ export function createAudio() {
   let lastQuack = 0;
 
   function ac() {
-    if (muted) return null;
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
@@ -34,7 +34,20 @@ export function createAudio() {
     return ctx;
   }
 
-  function toneAt(audio, when, freq, dur, type, gain, slide) {
+  function sfx() {
+    if (!shotsOn) return null;
+    return ac();
+  }
+
+  function outlet(audio, pan) {
+    if (!pan) return audio.destination;
+    const node = audio.createStereoPanner();
+    node.pan.value = Math.max(-1, Math.min(1, pan));
+    node.connect(audio.destination);
+    return node;
+  }
+
+  function toneAt(audio, when, freq, dur, type, gain, slide, pan) {
     const osc = audio.createOscillator();
     const amp = audio.createGain();
     osc.type = type;
@@ -43,19 +56,19 @@ export function createAudio() {
     amp.gain.setValueAtTime(gain, when);
     amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
     osc.connect(amp);
-    amp.connect(audio.destination);
+    amp.connect(outlet(audio, pan));
     osc.start(when);
     osc.stop(when + dur + 0.02);
   }
 
-  function tone(freq, dur, type, gain, slide) {
-    const audio = ac();
+  function tone(freq, dur, type, gain, slide, pan) {
+    const audio = sfx();
     if (!audio) return;
-    toneAt(audio, audio.currentTime, freq, dur, type, gain, slide);
+    toneAt(audio, audio.currentTime, freq, dur, type, gain, slide, pan);
   }
 
-  function noise(dur, gain, freq) {
-    const audio = ac();
+  function noise(dur, gain, freq, pan) {
+    const audio = sfx();
     if (!audio) return;
     const count = Math.max(1, Math.floor(audio.sampleRate * dur));
     const buffer = audio.createBuffer(1, count, audio.sampleRate);
@@ -70,7 +83,7 @@ export function createAudio() {
     amp.gain.value = gain;
     src.connect(filter);
     filter.connect(amp);
-    amp.connect(audio.destination);
+    amp.connect(outlet(audio, pan));
     src.start();
   }
 
@@ -79,10 +92,11 @@ export function createAudio() {
   }
 
   function scheduleStep(audio, index, when) {
+    const level = music === "quiet" ? 0.28 : 1;
     const bass = BASS[index];
     const lead = MELODY[index];
-    if (bass) toneAt(audio, when, midi(bass), 0.2, "triangle", 0.03);
-    if (lead) toneAt(audio, when, midi(lead), 0.16, "square", 0.018, midi(lead) * 0.99);
+    if (bass) toneAt(audio, when, midi(bass), 0.2, "triangle", 0.03 * level);
+    if (lead) toneAt(audio, when, midi(lead), 0.16, "square", 0.018 * level, midi(lead) * 0.99);
     if (index % 2 === 1) {
       const count = Math.floor(audio.sampleRate * 0.03);
       const buffer = audio.createBuffer(1, count, audio.sampleRate);
@@ -91,7 +105,7 @@ export function createAudio() {
       const src = audio.createBufferSource();
       src.buffer = buffer;
       const amp = audio.createGain();
-      amp.gain.setValueAtTime(0.012, when);
+      amp.gain.setValueAtTime(0.012 * (music === "quiet" ? 0.28 : 1), when);
       amp.gain.exponentialRampToValueAtTime(0.0001, when + 0.03);
       src.connect(amp);
       amp.connect(audio.destination);
@@ -117,7 +131,7 @@ export function createAudio() {
   }
 
   function startMusic() {
-    if (musicOn || muted || !unlocked) return;
+    if (musicOn || music === "off" || !unlocked) return;
     const audio = ac();
     if (!audio) return;
     musicOn = true;
@@ -132,20 +146,24 @@ export function createAudio() {
   }
 
   return {
-    get muted() {
-      return muted;
+    get music() {
+      return music;
     },
-    setMuted(value) {
-      muted = value;
-      if (muted) stopMusic();
+    get shots() {
+      return shotsOn;
+    },
+    setMusic(mode) {
+      music = mode === "quiet" || mode === "off" ? mode : "on";
+      if (music === "off") stopMusic();
       else if (unlocked) startMusic();
+    },
+    setShots(value) {
+      shotsOn = !!value;
     },
     resume() {
       unlocked = true;
-      if (!muted) {
-        ac();
-        startMusic();
-      }
+      ac();
+      if (music !== "off") startMusic();
     },
     click() {
       tone(520, 0.06, "square", 0.04, 740);
@@ -156,15 +174,15 @@ export function createAudio() {
     dig() {
       noise(0.07, 0.08, 400);
     },
-    shoot(enemy) {
-      noise(0.045, enemy ? 0.05 : 0.07, enemy ? 500 : 900);
-      tone(enemy ? 420 : 920, 0.07, "square", enemy ? 0.05 : 0.07, enemy ? 140 : 210);
-      tone(enemy ? 180 : 280, 0.09, "triangle", 0.04, 70);
+    shoot(enemy, pan) {
+      noise(0.045, enemy ? 0.05 : 0.07, enemy ? 500 : 900, pan || 0);
+      tone(enemy ? 420 : 920, 0.07, "square", enemy ? 0.05 : 0.07, enemy ? 140 : 210, pan || 0);
+      tone(enemy ? 180 : 280, 0.09, "triangle", 0.04, 70, pan || 0);
     },
     quack() {
       const now = performance.now();
       if (now - lastQuack < 2000) return;
-      const audio = ac();
+      const audio = sfx();
       if (!audio) return;
       lastQuack = now;
       const t = audio.currentTime;

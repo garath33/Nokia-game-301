@@ -100,6 +100,7 @@ const view = createView();
 
 const splash = document.getElementById("splash");
 const menu = document.getElementById("menu");
+const offer = document.getElementById("offer");
 const shop = document.getElementById("shop");
 const between = document.getElementById("between");
 const pause = document.getElementById("pause");
@@ -113,7 +114,8 @@ let winsNeeded = WINS_OPTIONS.includes(save.winsNeeded) ? save.winsNeeded : 3;
 let mode = "splash";
 let match = null;
 let best = save.matches || 0;
-audio.setMuted(!!save.mute);
+audio.setMusic(initialMusic(save));
+audio.setShots(initialShots(save));
 
 const keys = { left: false, right: false, up: false, down: false, shoot: false };
 let last = performance.now();
@@ -131,7 +133,13 @@ document.getElementById("to-menu").addEventListener("click", () => setMode("menu
 document.getElementById("over-menu").addEventListener("click", () => setMode("menu"));
 document.getElementById("next").addEventListener("click", () => continueRound());
 document.getElementById("between-next").addEventListener("click", () => continueRound());
-document.getElementById("mute").addEventListener("click", () => toggleMute());
+document.getElementById("offer-skip").addEventListener("click", () => continueRound());
+document.getElementById("offer-shop").addEventListener("click", () => {
+  audio.click();
+  setMode("shop");
+});
+document.getElementById("music").addEventListener("click", () => cycleMusic());
+document.getElementById("shots").addEventListener("click", () => toggleShots());
 
 for (const button of document.querySelectorAll("[data-diff]")) {
   button.addEventListener("click", () => {
@@ -178,7 +186,12 @@ window.addEventListener("keydown", (event) => {
   if (event.repeat) return;
   const key = event.key.toLowerCase();
   if (key === "m") {
-    toggleMute();
+    cycleMusic();
+    return;
+  }
+  if (mode === "offer") {
+    if (key === "enter") continueRound();
+    if (key === "o") setMode("shop");
     return;
   }
   if (key === "escape") {
@@ -282,6 +295,7 @@ function setMode(next) {
   mode = next;
   splash.classList.toggle("hidden", mode !== "splash");
   menu.classList.toggle("hidden", mode !== "menu");
+  offer.classList.toggle("hidden", mode !== "offer");
   shop.classList.toggle("hidden", mode !== "shop");
   between.classList.toggle("hidden", mode !== "between");
   pause.classList.toggle("hidden", mode !== "pause");
@@ -290,6 +304,9 @@ function setMode(next) {
   if (mode === "menu") {
     status.textContent = "Menu Kačík";
     renderMenu();
+  } else if (mode === "offer") {
+    status.textContent = "Volba obchodu";
+    renderOffer();
   } else if (mode === "shop") {
     status.textContent = "Obchod mezi koly";
     renderShop();
@@ -328,7 +345,12 @@ function frame(now) {
 function react(before, energy) {
   for (const event of match.events) {
     if (event.t === "dig" && event.kind === "player") audio.dig();
-    if (event.t === "shoot") audio.shoot(event.kind === "enemy");
+    if (event.t === "shoot") {
+      const pan = event.kind === "enemy"
+        ? Math.max(-1, Math.min(1, (event.x - match.player.tx) / 18))
+        : 0;
+      audio.shoot(event.kind === "enemy", pan);
+    }
     if (event.t === "hit") {
       audio.hit(event.kind === "player");
       if (event.kind === "player") audio.quack();
@@ -337,7 +359,7 @@ function react(before, energy) {
     if (event.t === "boom" && event.kind === "player") audio.lose();
   }
   if (energy < 99.5 && match.player.energy >= 100) audio.tick();
-  if (before === "play" && match.phase === "shop") setMode("shop");
+  if (before === "play" && match.phase === "shop") setMode("offer");
   if (before === "play" && match.phase === "between") setMode("between");
   if (before === "play" && match.phase === "over") {
     if (match.victor === "player") {
@@ -353,7 +375,9 @@ function renderMenu() {
   document.getElementById("best").textContent = best
     ? `Vyhrané zápasy: ${best}`
     : "Ještě žádný vyhraný zápas.";
-  document.getElementById("mute").textContent = audio.muted ? "Zvuk: vypnuto" : "Zvuk: zapnuto";
+  const musicLabel = audio.music === "off" ? "vypnuto" : audio.music === "quiet" ? "potichu" : "zapnuto";
+  document.getElementById("music").textContent = `Hudba: ${musicLabel}`;
+  document.getElementById("shots").textContent = audio.shots ? "Rány: zapnuto" : "Rány: vypnuto";
   for (const button of document.querySelectorAll("[data-diff]")) {
     button.setAttribute("aria-pressed", String(button.dataset.diff === difficulty));
   }
@@ -422,6 +446,17 @@ function renderShop() {
   });
 }
 
+function pointsWord(n) {
+  if (n === 1) return "bod";
+  if (n >= 2 && n <= 4) return "body";
+  return "bodů";
+}
+
+function renderOffer() {
+  document.getElementById("offer-copy").textContent =
+    `Stav ${match.wins}:${match.losses} na ${match.winsNeeded}. Máš ${match.points} ${pointsWord(match.points)}. Obchod můžeš otevřít, nebo ho teď vynechat a hrát dál.`;
+}
+
 function renderBetween() {
   document.getElementById("between-copy").textContent =
     `Soupeř má tohle kolo. Stav ${match.wins}:${match.losses} na ${match.winsNeeded}. Další kolo začíná z nového krytu.`;
@@ -439,9 +474,20 @@ function applyTheme() {
   document.body.dataset.theme = themeId;
 }
 
-function toggleMute() {
-  audio.setMuted(!audio.muted);
-  if (!audio.muted) {
+function cycleMusic() {
+  const next = audio.music === "on" ? "quiet" : audio.music === "quiet" ? "off" : "on";
+  audio.setMusic(next);
+  if (next !== "off") {
+    audio.resume();
+    audio.click();
+  }
+  persist();
+  if (mode === "menu") renderMenu();
+}
+
+function toggleShots() {
+  audio.setShots(!audio.shots);
+  if (audio.shots) {
     audio.resume();
     audio.click();
   }
@@ -470,7 +516,14 @@ function resize() {
 }
 
 function persist() {
-  const data = { theme: themeId, difficulty, winsNeeded, matches: best, mute: audio.muted };
+  const data = {
+    theme: themeId,
+    difficulty,
+    winsNeeded,
+    matches: best,
+    music: audio.music,
+    shots: audio.shots,
+  };
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   save = data;
 }
@@ -481,6 +534,16 @@ function loadSave() {
   } catch {
     return {};
   }
+}
+
+function initialMusic(data) {
+  if (data.music === "on" || data.music === "quiet" || data.music === "off") return data.music;
+  return data.mute ? "off" : "on";
+}
+
+function initialShots(data) {
+  if (typeof data.shots === "boolean") return data.shots;
+  return !data.mute;
 }
 
 window.TUNIK = {

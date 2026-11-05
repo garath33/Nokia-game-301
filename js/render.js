@@ -257,6 +257,15 @@ function drawLamp(ctx, theme, f, time, match, owner) {
 
 function drawBall(ctx, ball, theme) {
   const color = ball.owner === "player" ? theme.ball : theme.ballEnemy;
+  const len = Math.hypot(ball.vx, ball.vy) || 1;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(ball.x, ball.y);
+  ctx.lineTo(ball.x - (ball.vx / len) * 22, ball.y - (ball.vy / len) * 22);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, 3.1, 0, Math.PI * 2);
@@ -544,7 +553,7 @@ function hudHint(match) {
   }
   if (onPad) return "Kryt je plný. Můžeš zase ven.";
   if (p.energy < 34) return "Život dochází. Šipka K vede do tvého krytu.";
-  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. M ztlumí zvuk.";
+  if (match.roundTime < 18) return "Šipky hrabou. Mezerník střílí malé míčky. M mění hudbu.";
   return "Život ubývá pořád. Soupeř tě hledá stejně, jako ty jeho.";
 }
 
@@ -552,25 +561,63 @@ function drawMarkers(ctx, w, h, match, theme, view) {
   const home = tileCenter(match.player.homeX, match.player.homeY);
   const sx = home.x - view.camX;
   const sy = home.y - view.camY;
-  if (sx > 40 && sy > 40 && sx < w - 40 && sy < h - 40) return;
-  const cx = clamp(sx, 36, w - 36);
-  const cy = clamp(sy, 140, h - 70);
-  ctx.strokeStyle = theme.good;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 12, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = theme.good;
-  ctx.font = "12px ui-monospace, monospace";
-  ctx.fillText("K", cx - 4, cy + 4);
+  if (!(sx > 40 && sy > 40 && sx < w - 40 && sy < h - 40)) {
+    const cx = clamp(sx, 36, w - 36);
+    const cy = clamp(sy, 140, h - 70);
+    ctx.strokeStyle = theme.good;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = theme.good;
+    ctx.font = "12px ui-monospace, monospace";
+    ctx.fillText("K", cx - 4, cy + 4);
+  }
 
-  if (!match.rumor || match.rumor.ttl <= 0) return;
-  const rx = (match.rumor.x + 0.5) * TILE - view.camX;
-  const ry = (match.rumor.y + 0.5) * TILE - view.camY;
-  const mx = clamp(rx, 28, w - 190);
-  const my = clamp(ry, 140, h - 70);
+  if (match.rumor && match.rumor.ttl > 0) {
+    const rx = (match.rumor.x + 0.5) * TILE - view.camX;
+    const ry = (match.rumor.y + 0.5) * TILE - view.camY;
+    const mx = clamp(rx, 28, w - 190);
+    const my = clamp(ry, 140, h - 70);
+    ctx.fillStyle = theme.danger;
+    ctx.font = "12px ui-monospace, monospace";
+    ctx.fillText("HRABE", mx - 18, my);
+  }
+  drawShotCue(ctx, w, h, match, theme, view);
+}
+
+function drawShotCue(ctx, w, h, match, theme, view) {
+  const cue = match.shotCue;
+  if (!cue || cue.ttl <= 0) return;
+  const rx = (cue.x + 0.5) * TILE - view.camX;
+  const ry = (cue.y + 0.5) * TILE - view.camY;
+  const left = 28;
+  const top = 150;
+  const right = w - 28;
+  const bottom = h - 72;
+  const on = rx >= left && rx <= right && ry >= top && ry <= bottom;
+  const mx = clamp(rx, left, right);
+  const my = clamp(ry, top, bottom);
+  ctx.save();
+  ctx.translate(mx, my);
   ctx.fillStyle = theme.danger;
   ctx.font = "12px ui-monospace, monospace";
-  ctx.fillText("HRABE", mx - 18, my);
+  ctx.textAlign = "center";
+  if (!on) {
+    const ang = Math.atan2(ry - my, rx - mx);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(16, 0);
+    ctx.lineTo(-8, -7);
+    ctx.lineTo(-8, 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.rotate(-ang);
+    ctx.fillText("STŘÍLÍ", 0, 20);
+  } else {
+    ctx.fillText("STŘÍLÍ", 0, -12);
+  }
+  ctx.restore();
+  ctx.textAlign = "left";
 }
 
 function drawBanner(ctx, w, match, theme, ui) {

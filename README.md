@@ -6,7 +6,7 @@ Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, panc�
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet.
 
-Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. Kačenka je žlutá s oranžovým zobákem. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí hraje původní osmibitová smyčka, výstřel má vlastní ránu.
+Mapa je ve vlnitých vrstvách: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. Kačenka je žlutá s oranžovým zobákem. Po zásahu kvákne, nejdřív za dvě sekundy znovu, a čtvrt sekundy další střela nepočítá. Míček má krátkou stopu. Hudba a rány se ztlumují zvlášť.
 
 ## Hraní
 
@@ -16,7 +16,7 @@ npm start
 
 Pak otevři `http://localhost:8765`.
 
-Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M ztlumí zvuk, Esc je pauza.
+Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu (zapnuto, potichu, vypnuto). Rány mají v menu vlastní tlačítko. Esc je pauza.
 
 V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (tyrkys, fialová, laserová červeň).
 
@@ -24,7 +24,8 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 
 - Soupeř používá stejné hrabání, střelbu, úbytek života a dobíjení ve svém krytu.
 - Každé kolo si soupeř postaví kryt jinde. Každá hra začíná jiným rozložením.
-- Na radaru se občas mihne nepřesná tečka. Blízké hrabání je slyšet.
+- Na radaru se občas mihne nepřesná tečka. Blízké hrabání je slyšet. Výstřel mimo dohled ukáže na chvíli směr.
+- Po výhře se dá jít do obchodu, nebo ho vynechat a hrát dál. Body zůstanou.
 - Světlo z kačenky neprochází hlínou. Vlastní tunely zůstávají v paměti tmavší.
 - Zásah bez vylepšení bere 30 % života. Střela stojí 5,1 života.
 - Z krytu se jde ven na všechny čtyři strany. Obě kačenky jsou stejně rychlé, i v pozdějších kolech.

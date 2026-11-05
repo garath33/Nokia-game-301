@@ -19,6 +19,7 @@ export const GRAVEL = 7;
 export const WINS_OPTIONS = [3, 5, 8];
 
 export const SHOT_COST = 5.1;
+export const HIT_GRACE = 0.25;
 
 export const DIRS = [
   { x: 0, y: -1 },
@@ -224,6 +225,7 @@ export function createMatch(opts = {}) {
     roundTime: 0,
     noise: null,
     rumor: null,
+    shotCue: null,
     banner: "",
     bannerT: 0,
     player: null,
@@ -257,12 +259,13 @@ export function startNextRound(match) {
   match.phase = "play";
   match.noise = null;
   match.rumor = null;
+  match.shotCue = null;
   buildMap(match, mulberry32((match.seed + match.round * 9973) >>> 0));
   return true;
 }
 
 export function strike(match, target, raw) {
-  if (!target || target.energy <= 0) return 0;
+  if (!target || target.energy <= 0 || target.hitGrace > 0) return 0;
   let amount = raw;
   if (target.armorT > 0 && target.armorLevel > 0) {
     const absorb = ARMOR_ABSORB[target.armorLevel] || 0;
@@ -275,6 +278,7 @@ export function strike(match, target, raw) {
     });
   }
   target.energy -= amount;
+  target.hitGrace = HIT_GRACE;
   pushEvent(match, {
     t: "hit",
     x: target.tx,
@@ -342,10 +346,18 @@ function stepOnce(match, input, dt) {
     match.rumor.ttl -= dt;
     if (match.rumor.ttl <= 0) match.rumor = null;
   }
+  if (match.shotCue) {
+    match.shotCue.ttl -= dt;
+    if (match.shotCue.ttl <= 0) match.shotCue = null;
+  }
 }
 
 function updateFighter(match, f, dt, drainOn, speedMul) {
   if (f.energy <= 0) return;
+  if (f.hitGrace > 0) {
+    f.hitGrace -= dt;
+    if (f.hitGrace < 0.001) f.hitGrace = 0;
+  }
   f.cool = Math.max(0, f.cool - dt);
   const onPad = onOwnPad(match, f);
   if (f.armorT > 0 && !onPad && drainOn) f.armorT = Math.max(0, f.armorT - dt);
@@ -472,7 +484,7 @@ function tryShoot(match, f) {
   });
   pushEvent(match, { t: "shoot", x: f.tx, y: f.ty, kind: f.kind });
   if (f.kind === "player") match.noise = { x: f.tx, y: f.ty, ttl: 1.6, kind: "player" };
-  else match.rumor = { x: f.tx, y: f.ty, ttl: 1.25 };
+  else if (!match.lit[f.ty * COLS + f.tx]) match.shotCue = { x: f.tx, y: f.ty, ttl: 1.15 };
   return true;
 }
 
@@ -926,6 +938,7 @@ function buildMap(match, rng) {
   match.seen.fill(0);
   match.lit.fill(0);
   const seed = (rng() * 1e9) | 0;
+  const bands = buildStrata(match.diff.mix, rng);
 
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLS; x++) {
@@ -934,24 +947,10 @@ function buildMap(match, rng) {
         match.type[i] = WALL;
         continue;
       }
-      match.type[i] = pickMaterial(regionNoise(x, y, seed), match.diff.mix);
+      const wave = Math.round(Math.sin(x * 0.22 + (seed % 97)) * 1.6);
+      const yy = Math.max(0, Math.min(bands.length - 1, y + wave));
+      match.type[i] = bands[yy];
       if (isPillar(x, y, seed, match.diff)) match.type[i] = WALL;
-    }
-  }
-
-  const blobs = match.diff.rocks;
-  for (let b = 0; b < blobs; b++) {
-    const cx = 4 + ((rng() * (COLS - 8)) | 0);
-    const cy = 4 + ((rng() * (ROWS - 8)) | 0);
-    const rad = 1.2 + rng() * 2.4;
-    for (let y = -3; y <= 3; y++) {
-      for (let x = -3; x <= 3; x++) {
-        if (x * x + y * y > rad * rad) continue;
-        const tx = cx + x;
-        const ty = cy + y;
-        if (tx < 2 || ty < 2 || tx >= COLS - 2 || ty >= ROWS - 2) continue;
-        match.type[ty * COLS + tx] = ROCK;
-      }
     }
   }
 
@@ -1060,6 +1059,7 @@ function makeFighter(kind, tx, ty) {
     digName: "",
     lowPower: false,
     energy: 100,
+    hitGrace: 0,
     cool: 0,
     armorT: 0,
     armorLevel: 0,
@@ -1081,28 +1081,29 @@ function makeFighter(kind, tx, ty) {
   };
 }
 
-function pickMaterial(n, mix) {
+function buildStrata(mix, rng) {
   const order = [SAND, SOIL, CLAY, GRAVEL, ROCK];
-  let acc = 0;
+  const layers = [];
   for (let i = 0; i < order.length; i++) {
-    acc += mix[i];
-    if (n < acc) return order[i];
+    if (mix[i] >= 0.04) layers.push({ mat: order[i], w: mix[i] });
   }
-  return ROCK;
-}
-
-function regionNoise(x, y, seed) {
-  const scale = 5;
-  const x0 = Math.floor(x / scale);
-  const y0 = Math.floor(y / scale);
-  const fx = x / scale - x0;
-  const fy = y / scale - y0;
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const v00 = hash01(x0, y0, seed);
-  const v10 = hash01(x0 + 1, y0, seed);
-  const v01 = hash01(x0, y0 + 1, seed);
-  const v11 = hash01(x0 + 1, y0 + 1, seed);
-  return lerp(lerp(v00, v10, fx), lerp(v01, v11, fx), fy);
+  if (!layers.length) layers.push({ mat: SOIL, w: 1 });
+  for (let i = layers.length - 1; i > 0; i--) {
+    const j = (rng() * (i + 1)) | 0;
+    const swap = layers[i];
+    layers[i] = layers[j];
+    layers[j] = swap;
+  }
+  const span = ROWS + 4;
+  const total = layers.reduce((sum, layer) => sum + layer.w, 0);
+  const bands = [];
+  let y = 0;
+  for (let i = 0; i < layers.length; i++) {
+    const last = i === layers.length - 1;
+    const thick = last ? span - y : Math.max(4, Math.round((layers[i].w / total) * span));
+    for (let k = 0; k < thick && y < span; k++) bands[y++] = layers[i].mat;
+  }
+  return bands;
 }
 
 function isPillar(x, y, seed, diff) {

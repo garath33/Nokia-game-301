@@ -1,4 +1,4 @@
-import { COLS, ROCK, SAND, SHOT_COST, createMatch, step, strike } from "../js/sim.js";
+import { COLS, DIRS, ROCK, SAND, SHOT_COST, createMatch, step, strike } from "../js/sim.js";
 
 let failed = 0;
 const idle = { left: false, right: false, up: false, down: false, shoot: false };
@@ -45,6 +45,12 @@ assert(sand.spent < 3 && rock.spent > 7, "density gap is obvious in one tile");
   const match = createMatch({ seed: 31, difficulty: "normal", winsNeeded: 3 });
   match.grace = 0;
   match.diff.regen = 0;
+  const aim = DIRS[match.player.facing];
+  for (let s = 1; s <= 6; s++) {
+    const x = match.player.tx + aim.x * s;
+    const y = match.player.ty + aim.y * s;
+    match.type[y * COLS + x] = 0;
+  }
   const before = match.player.energy;
   step(match, shoot, 0.25);
   const spent = before - match.player.energy;
@@ -80,6 +86,7 @@ assert(sand.spent < 3 && rock.spent > 7, "density gap is obvious in one tile");
   assert(match.wins === 1 && match.phase === "shop", "a kill is one win and opens the shop");
   match.wins = 2;
   match.enemy.energy = 1;
+  match.enemy.hitGrace = 0;
   match.phase = "play";
   strike(match, match.enemy, 50);
   step(match, idle, 0.05);

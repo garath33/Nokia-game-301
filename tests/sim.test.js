@@ -6,6 +6,7 @@ import {
   PAD,
   ROCK,
   SAND,
+  HIT_GRACE,
   SHOT_COST,
   SOIL,
   WALL,
@@ -266,6 +267,18 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   assert(counts[GRAVEL] > 20, "gravel regions");
   assert(counts[ROCK] > 15, "rock pockets");
   assert(counts[WALL] > 12, "bomberman pillars");
+  let same = 0;
+  let pairs = 0;
+  for (let y = 3; y < 38; y++) {
+    for (let x = 3; x < 70; x++) {
+      const a = match.type[y * COLS + x];
+      const b = match.type[y * COLS + x + 1];
+      if (a === WALL || b === WALL || a === AIR || b === AIR || a === PAD || b === PAD) continue;
+      pairs += 1;
+      if (a === b) same += 1;
+    }
+  }
+  assert(same / pairs > 0.8, `ground sits in layers (${same}/${pairs})`);
 }
 
 {
@@ -363,6 +376,35 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   match.enemy.energy = 100;
   step(match, idle, 0.45);
   close(match.player.energy, 70, 0.05, "one hit takes 30% even later in the match");
+}
+
+{
+  const match = createMatch({ seed: 16, difficulty: "normal" });
+  match.diff.regen = 0;
+  match.player.energy = 100;
+  assert(strike(match, match.player, 30) === 30, "first hit lands");
+  assert(strike(match, match.player, 30) === 0, "next hit inside the gap does not count");
+  assert(match.player.energy === 70, "life stays at 70");
+  step(match, idle, HIT_GRACE);
+  assert(strike(match, match.player, 30) === 30, "hit counts after a quarter second");
+  assert(match.player.energy === 40, "second counted hit");
+}
+
+{
+  const match = createMatch({ seed: 17, difficulty: "normal" });
+  match.grace = 0;
+  const y = match.player.ty;
+  for (let x = match.player.tx; x <= match.player.tx + 6; x++) {
+    match.type[y * COLS + x] = AIR;
+    match.pad[y * COLS + x] = 0;
+  }
+  match.enemy.tx = match.player.tx + 5;
+  match.enemy.ty = y;
+  match.enemy.moving = false;
+  match.enemy.energy = 80;
+  match.lit.fill(0);
+  step(match, idle, 0.05);
+  assert(match.shotCue && match.shotCue.x === match.enemy.tx, "unseen shot marks a direction");
 }
 
 if (failed) {
