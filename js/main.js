@@ -14,6 +14,25 @@ import {
 
 const CLASSIC_DUCK = { body: "#ffd000", wing: "#f2a400", beak: "#ff7a00", eye: "#2b1608" };
 const RIVAL_DUCK = { body: "#ffd000", wing: "#e09400", beak: "#ff7a00", eye: "#2b1608" };
+// Two floor purples from the tile grid, plus the pipe turquoise.
+const CYBER_DUCK = {
+  body: "#64248f",
+  tile: "#c43d96",
+  wing: "#c43d96",
+  beak: "#2ee6d6",
+  eye: "#140814",
+  rim: "#2ee6d6",
+  glint: "#2ee6d6",
+};
+const CYBER_RIVAL = {
+  body: "#c43d96",
+  tile: "#64248f",
+  wing: "#64248f",
+  beak: "#2ee6d6",
+  eye: "#140814",
+  rim: "#2ee6d6",
+  glint: "#2ee6d6",
+};
 
 const THEMES = {
   classic: {
@@ -58,37 +77,41 @@ const THEMES = {
     name: "Cyberpunk",
     void: "#070014",
     air: "#090015",
-    soil: ["#1a0b30", "#241244", "#31185a", "#1a1038"],
-    clay: ["#3a1468", "#4a1878", "#2a0e48"],
-    rock: ["#101826", "#18283a", "#0c141e"],
-    wall: "#12383c",
-    wallHi: "#3dffe8",
-    pad: "#062428",
-    padEnemy: "#2a0614",
-    padLine: "#ff2a55",
-    crack: "#ff2a55",
-    mote: "#d46bff",
-    player: CLASSIC_DUCK,
-    enemy: RIVAL_DUCK,
-    sand: ["#6a4a98", "#7c5aaa", "#543880"],
-    gravel: ["#243044", "#1a2838", "#314258"],
+    soil: ["#64248f", "#54207a", "#c43d96", "#a83280"],
+    clay: ["#d452a4", "#b03888", "#e060b0", "#8e2874"],
+    rock: ["#1c1430", "#2a1c44", "#141024", "#321e50"],
+    wall: "#12343a",
+    wallHi: "#2ee6d6",
+    pad: "#0e2428",
+    padEnemy: "#2a1030",
+    padLine: "#2ee6d6",
+    padLineEnemy: "#c43d96",
+    crack: "#2ee6d6",
+    mote: "#c43d96",
+    grout: "#14081c",
+    spark: "#2ee6d6",
+    tiles: true,
+    player: CYBER_DUCK,
+    enemy: CYBER_RIVAL,
+    sand: ["#e7a0d4", "#d080c0", "#f0b8e4", "#c068b0"],
+    gravel: ["#3a3480", "#2c3e78", "#4a3c90", "#243868"],
     ball: "#b8fff8",
-    ballEnemy: "#ff4a6a",
+    ballEnemy: "#c43d96",
     shield: "#d46bff",
-    good: "#3dffe8",
+    good: "#2ee6d6",
     danger: "#ff2a55",
     text: "#f6eeff",
     muted: "#c4a6e4",
-    line: "#3dffe8",
+    line: "#2ee6d6",
     panel: "rgba(10,4,20,.9)",
     radarAir: "#14081f",
     radarDirt: "#3a1868",
     radarPad: "#0e6e78",
     radarSweep: "rgba(255,42,85,.9)",
     glow: true,
-    glowA: "rgba(61,255,232,.85)",
-    glowB: "rgba(255,42,85,.8)",
-    swatch: ["#241244", "#ffd000", "#ff7a00", "#3dffe8", "#ff2a55"],
+    glowA: "rgba(46,230,214,.9)",
+    glowB: "rgba(196,61,150,.8)",
+    swatch: ["#64248f", "#c43d96", "#2ee6d6", "#54207a", "#e7a0d4"],
   },
 };
 
@@ -349,6 +372,9 @@ function react(before, energy) {
 }
 
 function renderMenu() {
+  document.getElementById("menu-lead").textContent = themeId === "cyber"
+    ? "Kačenka je ze dvou fialových a tyrkysového zobáku. Zem pod ní jsou fialové kostky ve dvou odstínech, spáry a potrubí svítí tyrkysově. Zápas se hraje na 3, 5 nebo 8 vítězných kol."
+    : "Dvě žluté kačenky s oranžovým zobákem, mapa z písku, hlíny, jílu, štěrku a skály a malé golfové míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.";
   document.getElementById("blurb").textContent = DIFFICULTIES[difficulty].blurb;
   document.getElementById("best").textContent = best
     ? `Vyhrané zápasy: ${best}`

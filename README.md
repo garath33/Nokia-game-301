@@ -6,7 +6,7 @@ Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, panc�
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet.
 
-Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. Kačenka je žlutá s oranžovým zobákem. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí hraje původní osmibitová smyčka, výstřel má vlastní ránu.
+Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. V klasickém vzhledu je kačenka žlutá s oranžovým zobákem. V cyberpunku má tělo dva fialové odstíny, zobák a obrys tyrkysové, a zem je z fialových kostek se tyrkysovou spárou. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí hraje původní osmibitová smyčka, výstřel má vlastní ránu.
 
 ## Hraní
 
@@ -18,7 +18,7 @@ Pak otevři `http://localhost:8765`.
 
 Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M ztlumí zvuk, Esc je pauza.
 
-V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (tyrkys, fialová, laserová červeň).
+V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (dvě fialové na kostkách i na kačence, tyrkysový zobák, obrys a potrubí).
 
 ## Pravidla kol
 

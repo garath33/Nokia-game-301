@@ -22,21 +22,22 @@
     <div class="card">
       <div class="mast">
         <svg viewBox="0 0 74 48" aria-hidden="true">
-          <ellipse cx="34" cy="27" rx="16" ry="12" fill="var(--duck)"/>
-          <ellipse cx="18" cy="27" rx="8" ry="6" fill="var(--duck)"/>
-          <ellipse cx="36" cy="16" rx="8" ry="4" fill="var(--wing)"/>
-          <ellipse cx="36" cy="38" rx="8" ry="4" fill="var(--wing)"/>
-          <circle cx="48" cy="27" r="8" fill="var(--duck)"/>
+          <ellipse cx="34" cy="27" rx="16" ry="12" fill="var(--duck)" stroke="var(--rim)" stroke-width="1.4"/>
+          <ellipse cx="18" cy="27" rx="8" ry="6" fill="var(--duck)" stroke="var(--rim)" stroke-width="1.2"/>
+          <ellipse cx="28" cy="30" rx="8" ry="6" fill="var(--wing)"/>
+          <ellipse cx="36" cy="16" rx="8" ry="4" fill="var(--wing)" stroke="var(--rim)" stroke-width="1"/>
+          <ellipse cx="36" cy="38" rx="8" ry="4" fill="var(--wing)" stroke="var(--rim)" stroke-width="1"/>
+          <circle cx="48" cy="27" r="8" fill="var(--duck)" stroke="var(--rim)" stroke-width="1.2"/>
           <path d="M54 24 L68 27 L54 30 Z" fill="var(--beak)"/>
-          <rect x="47" y="23" width="3" height="3" fill="#102000"/>
-          <rect x="47" y="29" width="3" height="3" fill="#102000"/>
+          <rect x="47" y="23" width="3" height="3" fill="var(--ink)"/>
+          <rect x="47" y="29" width="3" height="3" fill="var(--ink)"/>
         </svg>
         <div>
           <h1>KAČÍK</h1>
           <p class="sub">Kachní tunelovka</p>
         </div>
       </div>
-      <p class="lead">Dvě žluté kačenky s oranžovým zobákem, mapa z písku, hlíny, jílu, štěrku a skály a malé golfové míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.</p>
+      <p id="menu-lead" class="lead">Dvě žluté kačenky s oranžovým zobákem, mapa z písku, hlíny, jílu, štěrku a skály a malé golfové míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.</p>
       <button id="play" class="primary" type="button">HRÁT</button>
       <div class="label">Obtížnost</div>
       <div class="row" role="group" aria-label="Obtížnost">
@@ -132,17 +133,18 @@
     </div>
     <div class="hero">
     <svg class="hero-duck" viewBox="0 0 560 420" aria-hidden="true">
-      <ellipse cx="150" cy="268" rx="78" ry="52" fill="var(--duck)"/>
-      <ellipse cx="250" cy="262" rx="150" ry="108" fill="var(--duck)"/>
-      <ellipse cx="236" cy="268" rx="78" ry="42" fill="var(--wing)"/>
-      <circle cx="372" cy="176" r="82" fill="var(--duck)"/>
+      <ellipse cx="150" cy="268" rx="78" ry="52" fill="var(--duck)" stroke="var(--rim)" stroke-width="6"/>
+      <ellipse cx="250" cy="262" rx="150" ry="108" fill="var(--duck)" stroke="var(--rim)" stroke-width="6"/>
+      <ellipse cx="214" cy="292" rx="78" ry="52" fill="var(--wing)"/>
+      <ellipse cx="236" cy="268" rx="78" ry="42" fill="var(--wing)" stroke="var(--rim)" stroke-width="5"/>
+      <circle cx="372" cy="176" r="82" fill="var(--duck)" stroke="var(--rim)" stroke-width="6"/>
       <path d="M324 164 L448 136 L440 156 L318 180 Z" fill="var(--ink)"/>
       <ellipse cx="400" cy="178" rx="15" ry="6" fill="#f7f7f2"/>
       <circle cx="406" cy="178" r="5" fill="#111"/>
       <path d="M348 198 L402 214" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="square"/>
-      <path d="M430 158 L548 142 L444 184 Z" fill="var(--beak)"/>
-      <path d="M434 196 L536 228 L440 210 Z" fill="var(--beak)"/>
-      <path d="M438 180 L500 188 L436 204 Z" fill="#4a1c0a"/>
+      <path d="M430 158 L548 142 L444 184 Z" fill="var(--beak)" stroke="var(--rim)" stroke-width="4"/>
+      <path d="M434 196 L536 228 L440 210 Z" fill="var(--beak)" stroke="var(--rim)" stroke-width="4"/>
+      <path d="M438 180 L500 188 L436 204 Z" fill="var(--mouth)"/>
     </svg>
     <span class="ball b1" aria-hidden="true"></span>
     <span class="ball b2" aria-hidden="true"></span>

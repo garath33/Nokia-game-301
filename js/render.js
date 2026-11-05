@@ -129,11 +129,26 @@ export function drawAttract(ctx, w, h, theme, time) {
   const dug = Math.floor((time * 1.4) % 10);
   ctx.fillStyle = theme.air;
   for (let i = 0; i < dug; i++) ctx.fillRect(originX + TILE + i * TILE, originY + 3 * TILE, TILE, TILE);
-  ctx.fillStyle = theme.pad;
-  ctx.fillRect(originX, originY + 2 * TILE, TILE * 2, TILE * 3);
-  ctx.fillStyle = theme.wall;
-  ctx.fillRect(originX, originY + TILE, TILE * 2, TILE);
-  ctx.fillRect(originX, originY + 5 * TILE, TILE * 2, TILE);
+  if (theme.tiles) {
+    for (let ty = 0; ty < 3; ty++) {
+      for (let tx = 0; tx < 2; tx++) {
+        const px = originX + tx * TILE;
+        const py = originY + (2 + ty) * TILE;
+        paintPad(ctx, theme, px, py, false);
+        ctx.fillStyle = theme.padLine;
+        ctx.fillRect(px + 3, py + TILE - 5, TILE - 6, 2);
+      }
+    }
+    for (const wy of [1, 5]) {
+      for (let tx = 0; tx < 2; tx++) paintWall(ctx, theme, originX + tx * TILE, originY + wy * TILE);
+    }
+  } else {
+    ctx.fillStyle = theme.pad;
+    ctx.fillRect(originX, originY + 2 * TILE, TILE * 2, TILE * 3);
+    ctx.fillStyle = theme.wall;
+    ctx.fillRect(originX, originY + TILE, TILE * 2, TILE);
+    ctx.fillRect(originX, originY + 5 * TILE, TILE * 2, TILE);
+  }
 
   drawDuckAt(
     ctx,
@@ -174,17 +189,14 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
     ctx.fillRect(px, py, TILE, TILE);
     if (theme.glow && light === 1) edgeGlow(ctx, match, theme, x, y, px, py);
   } else if (cell === PAD) {
-    ctx.fillStyle = match.pad[i] === 1 ? theme.pad : theme.padEnemy;
-    ctx.fillRect(px, py, TILE, TILE);
-    ctx.fillStyle = theme.padLine;
+    paintPad(ctx, theme, px, py, match.pad[i] !== 1);
+    const line = match.pad[i] === 1 || !theme.padLineEnemy ? theme.padLine : theme.padLineEnemy;
+    ctx.fillStyle = line;
     ctx.globalAlpha = (light < 1 ? 0.35 : 0.7) * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(time * 3 + x)));
-    ctx.fillRect(px, py + TILE - 3, TILE, 2);
+    ctx.fillRect(px + 3, py + TILE - 5, TILE - 6, 2);
     ctx.globalAlpha = light < 1 ? 0.55 : 1;
   } else if (cell === WALL) {
-    ctx.fillStyle = theme.wall;
-    ctx.fillRect(px, py, TILE, TILE);
-    ctx.fillStyle = theme.wallHi;
-    ctx.fillRect(px, py, TILE, 3);
+    paintWall(ctx, theme, px, py);
   } else {
     const cracks = digCracks(match, x, y);
     paintGround(ctx, theme, cell, px, py, hash(x, y), light === 1);
@@ -208,6 +220,10 @@ function paintGround(ctx, theme, cell, px, py, n, full) {
         : cell === GRAVEL
           ? theme.gravel
           : theme.soil;
+  if (theme.tiles) {
+    paintCyberTile(ctx, theme, pal, px, py, n, full);
+    return;
+  }
   ctx.fillStyle = pal[n % pal.length];
   ctx.fillRect(px, py, TILE, TILE);
   ctx.fillStyle = pal[(n >> 3) % pal.length];
@@ -217,6 +233,49 @@ function paintGround(ctx, theme, cell, px, py, n, full) {
     const sy = py + ((n >> (s + 3)) % (TILE - 3));
     ctx.fillRect(sx, sy, 2, 2);
   }
+}
+
+function paintCyberTile(ctx, theme, pal, px, py, n, full) {
+  ctx.fillStyle = theme.grout;
+  ctx.fillRect(px, py, TILE, TILE);
+  ctx.fillStyle = pal[n % pal.length];
+  ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+  ctx.fillStyle = pal[(n >> 3) % pal.length];
+  const speck = full ? 4 : 1;
+  for (let s = 0; s < speck; s++) {
+    const sx = px + 3 + ((n >> (s + 1)) % (TILE - 8));
+    const sy = py + 3 + ((n >> (s + 3)) % (TILE - 8));
+    ctx.fillRect(sx, sy, 2, 2);
+  }
+  if ((n % 5) === 1) {
+    ctx.fillStyle = theme.spark;
+    const sx = px + 4 + (n % 14);
+    const sy = py + 5 + ((n >> 2) % 12);
+    ctx.fillRect(sx, sy, 2, 2);
+  }
+}
+
+function paintWall(ctx, theme, px, py) {
+  ctx.fillStyle = theme.wall;
+  ctx.fillRect(px, py, TILE, TILE);
+  ctx.fillStyle = theme.wallHi;
+  if (theme.tiles) {
+    ctx.fillRect(px + 5, py + 1, 3, TILE - 2);
+    ctx.fillRect(px + TILE - 8, py + 1, 3, TILE - 2);
+    return;
+  }
+  ctx.fillRect(px, py, TILE, 3);
+}
+
+function paintPad(ctx, theme, px, py, enemy) {
+  ctx.fillStyle = enemy ? theme.padEnemy : theme.pad;
+  ctx.fillRect(px, py, TILE, TILE);
+  if (!theme.tiles) return;
+  ctx.fillStyle = theme.grout;
+  ctx.fillRect(px, py, TILE, 2);
+  ctx.fillRect(px, py + TILE - 2, TILE, 2);
+  ctx.fillRect(px, py, 2, TILE);
+  ctx.fillRect(px + TILE - 2, py, 2, TILE);
 }
 
 function edgeGlow(ctx, match, theme, x, y, px, py) {
@@ -288,8 +347,8 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.rotate(ang);
   const bob = Math.sin(time * (digging ? 18 : 6)) * (digging ? 1.3 : 0.45);
   ctx.translate(bob, 0);
-  ctx.lineWidth = 1.4;
-  ctx.strokeStyle = palette.eye;
+  ctx.lineWidth = palette.rim ? 1.7 : 1.4;
+  ctx.strokeStyle = palette.rim || palette.eye;
   ctx.fillStyle = palette.body;
   ctx.beginPath();
   ctx.ellipse(-7, 0, 4.2, 3.3, 0, 0, Math.PI * 2);
@@ -298,6 +357,17 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.beginPath();
   ctx.ellipse(0, 0, 8.2, 6.4, 0, 0, Math.PI * 2);
   ctx.fill();
+  if (palette.tile) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 8.2, 6.4, 0, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = palette.tile;
+    ctx.fillRect(-9, -7, 9, 14);
+    ctx.restore();
+  }
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 8.2, 6.4, 0, 0, Math.PI * 2);
   ctx.stroke();
   ctx.fillStyle = palette.wing;
   ctx.beginPath();
@@ -312,7 +382,7 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.fill();
   ctx.stroke();
   if (rival) {
-    ctx.fillStyle = "#d01212";
+    ctx.fillStyle = theme.tiles ? "#140814" : "#d01212";
     ctx.fillRect(3.1, -2.5, 2.5, 5);
   }
   ctx.fillStyle = palette.beak;
@@ -325,6 +395,10 @@ function drawDuckAt(ctx, x, y, facing, palette, theme, time, digging, armor, riv
   ctx.fillStyle = palette.eye;
   ctx.fillRect(6.2, -2.15, 1.6, 1.5);
   ctx.fillRect(6.2, 0.7, 1.6, 1.5);
+  if (palette.glint) {
+    ctx.fillStyle = palette.glint;
+    ctx.fillRect(6.2, -2.15, 0.7, 0.7);
+  }
   if (armor) {
     ctx.strokeStyle = theme.shield;
     ctx.lineWidth = 1.6;

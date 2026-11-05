@@ -16,6 +16,8 @@
   --wing: #f2a400;
   --beak: #ff7a00;
   --ink: #2b1608;
+  --rim: transparent;
+  --mouth: #4a1c0a;
   --poster: #100c09;
   --wall: #8a5324;
   --wall-b: #5a3416;
@@ -27,26 +29,28 @@
 body[data-theme="cyber"] {
   --bg: #070014;
   --card: #100818;
-  --line: #3dffe8;
+  --line: #2ee6d6;
   --text: #f6eeff;
   --muted: #c4a6e4;
-  --accent: #3dffe8;
+  --accent: #2ee6d6;
   --danger: #ff2a55;
   --btn: #14081f;
   --shadow: 0 0 0 1px rgba(255, 42, 85, 0.35), 0 0 28px rgba(61, 255, 232, 0.16);
   --radius: 14px;
   --title: "Trebuchet MS", "Segoe UI", sans-serif;
   --body: "Segoe UI", "Trebuchet MS", sans-serif;
-  --duck: #3dffe8;
-  --wing: #9dfff4;
-  --beak: #ff2a55;
-  --ink: #041018;
+  --duck: #64248f;
+  --wing: #c43d96;
+  --beak: #2ee6d6;
+  --ink: #140814;
+  --rim: #2ee6d6;
+  --mouth: #0c3e3c;
   --poster: #070014;
   --wall: #3a1868;
   --wall-b: #1a0a32;
   --hole: #ff2a55;
   --ball: #e8fbff;
-  --poster-title: #3dffe8;
+  --poster-title: #2ee6d6;
 }
 
 * { box-sizing: border-box; }
@@ -415,20 +419,26 @@ button:disabled {
 }
 
 body[data-theme="cyber"] .poster-title {
-  text-shadow: 4px 0 0 #ff2a55, 0 0 22px rgba(61, 255, 232, 0.85);
+  text-shadow: 4px 0 0 #c43d96, 0 0 22px rgba(46, 230, 214, 0.85);
 }
 
 body[data-theme="cyber"] .ball {
-  background: radial-gradient(circle at 35% 35%, #fff, var(--ball) 40%, #ff2a55 78%);
-  box-shadow: 0 0 10px #ff2a55;
+  background: radial-gradient(circle at 35% 35%, #fff, #2ee6d6 42%, #c43d96 78%);
+  box-shadow: 0 0 10px #2ee6d6;
 }
 
 body[data-theme="cyber"] .shot-wall {
-  box-shadow: inset 0 0 0 2px #3dffe8, 0 0 24px rgba(255, 42, 85, 0.35);
+  background-color: #14081c;
+  background-image:
+    linear-gradient(#14081c 2px, transparent 2px),
+    linear-gradient(90deg, #14081c 2px, transparent 2px),
+    repeating-conic-gradient(#64248f 0% 25%, #c43d96 0% 50%);
+  background-size: 56px 56px, 56px 56px, 56px 56px;
+  box-shadow: inset 0 0 0 3px #2ee6d6, 0 0 24px rgba(46, 230, 214, 0.35);
 }
 
 body[data-theme="cyber"] .hero-duck {
-  filter: drop-shadow(0 0 12px rgba(61, 255, 232, 0.45));
+  filter: drop-shadow(0 0 12px rgba(46, 230, 214, 0.45));
 }
 
 .poster-hint {
