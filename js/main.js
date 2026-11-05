@@ -13,7 +13,18 @@ import {
 } from "./sim.js";
 
 const CLASSIC_DUCK = { body: "#ffd000", wing: "#f2a400", beak: "#ff7a00", eye: "#2b1608" };
-const RIVAL_DUCK = { body: "#ffd000", wing: "#e09400", beak: "#ff7a00", eye: "#2b1608" };
+const RIVAL_DUCK = {
+  body: "#e3dfd4",
+  wing: "#6d6a64",
+  beak: "#141414",
+  beakBand: "#e6e1d4",
+  eye: "#e10600",
+  head: "#b8431c",
+  crown: "#7a2a10",
+  breast: "#161311",
+  tail: "#1b1714",
+  life: "#d15a28",
+};
 
 const THEMES = {
   classic: {
@@ -51,7 +62,7 @@ const THEMES = {
     glow: false,
     glowA: "#3dffe8",
     glowB: "#ff2a55",
-    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#e6c36a", "#8d8a82"],
+    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#b8431c", "#e3dfd4"],
   },
   cyber: {
     id: "cyber",
@@ -88,7 +99,7 @@ const THEMES = {
     glow: true,
     glowA: "rgba(61,255,232,.85)",
     glowB: "rgba(255,42,85,.8)",
-    swatch: ["#241244", "#ffd000", "#ff7a00", "#3dffe8", "#ff2a55"],
+    swatch: ["#241244", "#3dffe8", "#ffd000", "#b8431c", "#e3dfd4"],
   },
 };
 
