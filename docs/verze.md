@@ -4,6 +4,10 @@
 
 Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
 
+## 13 — 6. 11. 2026
+
+Do téhle hry se přeneslo, co bylo ve verzi 9 a tady chybělo. DuckShop má rychlost chůze, trojstřel, Zbíječku, nezranitelnost, GhostDuck a laser. Po výhře kola se dá obchod otevřít, nebo přeskočit. Dobíjení funguje v každém krytu. Kačenky se do sebe zaseknou. Střela nechá šrám, míček má stopu a zásah čtvrt sekundy nepočítá znovu. V zemi leží nálezy. Výhra na kola, kostičky a vzhled kačenek zůstávají.
+
 ## 12 — 6. 11. 2026
 
 Nápis verze sedí ve volném pruhu nad panely, linka panelu ho nepřekrývá. Kryt má zase čtyři východy, na každé straně jeden. Jeden východ se ztratil ve funkci `carveBunker`, když se hra rozešla od verze 9. Tam se otvíraly všechny čtyři strany.

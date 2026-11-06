@@ -144,6 +144,8 @@ body[data-theme="cyber"] #fx {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 28px 28px 22px;
+  max-height: min(92vh, 920px);
+  overflow: auto;
 }
 
 .mast {
