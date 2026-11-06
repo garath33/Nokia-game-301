@@ -42,6 +42,8 @@ export const GIFT = {
 export const SHOT_COST = 8.5;
 export const SHOT_FLOOR = 1;
 export const SHELTER_REGEN = 1.4;
+export const HIT_GRACE = 0.25;
+export const LOOT_EVERY = 30;
 
 export const DIRS = [
   { x: 0, y: -1 },
@@ -145,6 +147,7 @@ export const SHOP = [
     id: "power",
     cost: 2,
     max: 3,
+    kind: "rank",
     name: "Účinnost střelby",
     blurb: "Míček projede víc polí a sebere víc života.",
   },
@@ -152,17 +155,69 @@ export const SHOP = [
     id: "rate",
     cost: 2,
     max: 3,
+    kind: "rank",
     name: "Rychlost střelby",
     blurb: "Kratší pauza mezi golfovými míčky.",
+  },
+  {
+    id: "speed",
+    cost: 2,
+    max: 3,
+    kind: "rank",
+    name: "Rychlost chůze",
+    blurb: "Každý stupeň zrychlí chůzi o 20 %.",
+  },
+  {
+    id: "spread",
+    cost: 2,
+    max: 1,
+    kind: "rank",
+    name: "Trojstřel",
+    blurb: "Jeden výstřel: míček rovně a dva pod úhlem 45°.",
+  },
+  {
+    id: "jack",
+    cost: 2,
+    max: 1,
+    kind: "charge",
+    name: "Zbíječka",
+    blurb: "20 s od začátku dalšího kola. Zem i pilíře povolí hned a bez ztráty života.",
+  },
+  {
+    id: "inv",
+    cost: 2,
+    max: 1,
+    kind: "charge",
+    name: "Nezranitelnost",
+    blurb: "30 s. Střely neberou život a kačenka se zatáhne do kovu.",
+  },
+  {
+    id: "ghost",
+    cost: 4,
+    max: 1,
+    kind: "charge",
+    name: "GhostDuck",
+    blurb: "40 s. Střílí stejnou dávku jako ty, stejně rychle, a schytá střely.",
+  },
+  {
+    id: "laser",
+    cost: 2,
+    max: 1,
+    kind: "rank",
+    name: "Laser",
+    blurb: "Natrvalo. Červený paprsek řeže stěny o 30 % líp.",
   },
   {
     id: "armor",
     cost: 4,
     max: 2,
+    kind: "rank",
     name: "Pancíř",
     blurb: "Po dobití na 100 % chrání delší dobu a kačenka si nasadí stříbrnou helmu. Zásah schytá hlavně pancíř.",
   },
 ];
+
+const LOOT_IDS = ["power", "rate", "speed", "spread", "jack", "inv", "ghost", "laser"];
 
 const FOUR = [
   [1, 0],
@@ -183,7 +238,8 @@ export function mulberry32(seed) {
 }
 
 export function duckLevel(upgrades) {
-  return 1 + upgrades.power + upgrades.rate + upgrades.armor;
+  return 1 + upgrades.power + upgrades.rate + upgrades.armor
+    + (upgrades.speed || 0) + (upgrades.spread || 0) + (upgrades.laser || 0);
 }
 
 export function shootingPower(match) {
@@ -247,7 +303,8 @@ export function createMatch(opts = {}) {
     round: 1,
     roundScale: 1,
     points: 0,
-    upgrades: { power: 0, rate: 0, armor: 0 },
+    upgrades: { power: 0, rate: 0, armor: 0, speed: 0, spread: 0, laser: 0 },
+    queue: { jack: false, inv: false, ghost: false },
     found: { power: 0, rate: 0 },
     kept: { power: 0, rate: 0 },
     gifts: [],
@@ -258,6 +315,8 @@ export function createMatch(opts = {}) {
     seen: new Uint8Array(COLS * ROWS),
     lit: new Uint8Array(COLS * ROWS),
     boon: new Uint8Array(COLS * ROWS),
+    scar: new Uint8Array(COLS * ROWS),
+    lootAt: new Uint8Array(COLS * ROWS),
     balls: [],
     events: [],
     grace: 1.45,
@@ -265,6 +324,7 @@ export function createMatch(opts = {}) {
     roundTime: 0,
     noise: null,
     rumor: null,
+    shotCue: null,
     banner: "",
     bannerT: 0,
     player: null,
@@ -278,8 +338,15 @@ export function buy(match, id) {
   if (match.phase !== "shop") return { ok: false, reason: "Obchod je mezi koly." };
   const item = SHOP.find((entry) => entry.id === id);
   if (!item) return { ok: false, reason: "Neznámá věc." };
-  if (match.upgrades[id] >= item.max) return { ok: false, reason: "Výš už to nejde." };
   if (match.points < item.cost) return { ok: false, reason: "Málo bodů." };
+  if (item.kind === "charge") {
+    if (match.queue[id]) return { ok: false, reason: "Už čeká na další kolo." };
+    match.points -= item.cost;
+    match.queue[id] = true;
+    pushEvent(match, { t: "buy", id });
+    return { ok: true };
+  }
+  if ((match.upgrades[id] || 0) >= item.max) return { ok: false, reason: "Výš už to nejde." };
   match.points -= item.cost;
   match.upgrades[id] += 1;
   pushEvent(match, { t: "buy", id });
@@ -298,12 +365,24 @@ export function startNextRound(match) {
   match.phase = "play";
   match.noise = null;
   match.rumor = null;
+  match.shotCue = null;
   buildMap(match, mulberry32((match.seed + match.round * 9973) >>> 0));
+  applyQueue(match);
   return true;
 }
 
+function applyQueue(match) {
+  if (match.queue.jack) match.player.jackT = 20;
+  if (match.queue.inv) match.player.invT = 30;
+  if (match.queue.ghost) match.player.ghostT = 40;
+  match.queue.jack = false;
+  match.queue.inv = false;
+  match.queue.ghost = false;
+}
+
 export function strike(match, target, raw) {
-  if (!target || target.energy <= 0) return 0;
+  if (!target || target.invT > 0 || target.hitGrace > 0) return 0;
+  if (target.energy <= 0) return 0;
   let amount = raw;
   if (target.armorT > 0 && target.armorLevel > 0) {
     const absorb = ARMOR_ABSORB[target.armorLevel] || 0;
@@ -316,6 +395,7 @@ export function strike(match, target, raw) {
     });
   }
   target.energy -= amount;
+  target.hitGrace = HIT_GRACE;
   pushEvent(match, {
     t: "hit",
     x: target.tx,
@@ -372,10 +452,10 @@ function stepOnce(match, input, dt) {
 
   ai(match, dt);
 
-  updateFighter(match, player, dt, drainOn, 1);
+  const playerWalk = 1 + 0.2 * (match.upgrades.speed || 0);
+  updateFighter(match, player, dt, drainOn, playerWalk);
   if (match.phase !== "play") return;
-  const enemySpeed = match.diff.speed * match.roundScale;
-  updateFighter(match, match.enemy, dt, drainOn, enemySpeed);
+  updateFighter(match, match.enemy, dt, drainOn, match.diff.speed);
   if (match.phase !== "play") return;
   updateBalls(match, dt);
   resolveDeaths(match);
@@ -389,12 +469,23 @@ function stepOnce(match, input, dt) {
     match.rumor.ttl -= dt;
     if (match.rumor.ttl <= 0) match.rumor = null;
   }
+  if (match.shotCue) {
+    match.shotCue.ttl -= dt;
+    if (match.shotCue.ttl <= 0) match.shotCue = null;
+  }
 }
 
 function updateFighter(match, f, dt, drainOn, speedMul) {
-  if (f.energy <= 0) return;
+  if (f.hitGrace > 0) {
+    f.hitGrace -= dt;
+    if (f.hitGrace < 0.001) f.hitGrace = 0;
+  }
+  if (f.jackT > 0) f.jackT = Math.max(0, f.jackT - dt);
+  if (f.invT > 0) f.invT = Math.max(0, f.invT - dt);
+  if (f.ghostT > 0) f.ghostT = Math.max(0, f.ghostT - dt);
+  if (f.energy <= 0 && f.invT <= 0) return;
   f.cool = Math.max(0, f.cool - dt);
-  const onPad = onOwnPad(match, f);
+  const onPad = onShelter(match, f);
   if (f.armorT > 0 && !onPad && drainOn) f.armorT = Math.max(0, f.armorT - dt);
 
   if (onPad) {
@@ -413,8 +504,15 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
     if (f.mt >= 1) {
       f.mt = 1;
       f.moving = false;
-      f.tx = f.bx;
-      f.ty = f.by;
+      if (duckBlocks(match, f, f.bx, f.by)) {
+        f.tx = f.ax;
+        f.ty = f.ay;
+      } else {
+        f.tx = f.bx;
+        f.ty = f.by;
+      }
+      f.bx = f.tx;
+      f.by = f.ty;
       claimBoon(match, f);
     }
   } else if (!waiting && f.wish != null) {
@@ -468,6 +566,21 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   }
   const id = ny * COLS + nx;
   const cell = match.type[id];
+  if (duckInWay(match, f, nx, ny, d)) {
+    f.digging = false;
+    f.digT = 0;
+    return;
+  }
+  if (f.jackT > 0 && cell !== AIR && cell !== PAD) {
+    if (f.kind === "player") takeLoot(match, nx, ny);
+    clearCell(match, nx, ny);
+    f.digging = false;
+    f.digT = 0;
+    f.lowPower = false;
+    pushEvent(match, { t: "dig", x: nx, y: ny, kind: f.kind });
+    startMove(f, nx, ny, 0.08 / speedMul);
+    return;
+  }
   if (cell === WALL) {
     f.digging = false;
     f.digT = 0;
@@ -508,6 +621,7 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   if (f.digT < f.digNeed) return;
 
   f.energy -= cost;
+  if (f.kind === "player") takeLoot(match, nx, ny);
   clearCell(match, nx, ny);
   f.digging = false;
   f.digT = 0;
@@ -543,26 +657,49 @@ function tryShoot(match, f) {
   if (f.kind === "enemy") cool /= match.diff.fire;
   f.cool = cool;
   const power = f.kind === "player" ? shootingPower(match) : 0;
-  const d = DIRS[f.facing];
-  const len = Math.hypot(d.x, d.y) || 1;
+  const spread = f.kind === "player" && match.upgrades.spread > 0;
+  const facings = spread ? [f.facing, (f.facing + 1) % 8, (f.facing + 7) % 8] : [f.facing];
+  const laser = f.kind === "player" && match.upgrades.laser > 0;
   const pos = fighterPixel(f);
   const speed = 360;
+  for (const facing of facings) pushBall(match, f, facing, pos, speed, power, laser);
+  if (f.kind === "player" && f.ghostT > 0) {
+    const spot = ghostSpot(f);
+    for (const facing of facings) pushBall(match, f, facing, spot, speed, power, laser);
+  }
+  pushEvent(match, { t: "shoot", x: f.tx, y: f.ty, kind: f.kind });
+  if (f.kind === "player") match.noise = { x: f.tx, y: f.ty, ttl: 1.6, kind: "player" };
+  else if (!match.lit[f.ty * COLS + f.tx]) match.shotCue = { x: f.tx, y: f.ty, ttl: 1.15 };
+  else match.rumor = { x: f.tx, y: f.ty, ttl: 1.25 };
+  return true;
+}
+
+function pushBall(match, f, facing, pos, speed, power, laser) {
+  const d = DIRS[facing];
+  const len = Math.hypot(d.x, d.y) || 1;
   match.balls.push({
     x: pos.x + (d.x / len) * 16,
     y: pos.y + (d.y / len) * 16,
     vx: (d.x / len) * speed,
     vy: (d.y / len) * speed,
     age: 0,
-    pen: shotPen(power),
+    pen: shotPen(power) * (laser ? 1.3 : 1),
+    rockDmg: laser ? 2 : 1,
     dmg: ballDamage(match, f, power),
+    laser,
     owner: f.kind,
     tx: -99,
     ty: -99,
+    trail: [],
   });
-  pushEvent(match, { t: "shoot", x: f.tx, y: f.ty, kind: f.kind });
-  if (f.kind === "player") match.noise = { x: f.tx, y: f.ty, ttl: 1.6, kind: "player" };
-  else match.rumor = { x: f.tx, y: f.ty, ttl: 1.25 };
-  return true;
+}
+
+export function ghostSpot(f) {
+  const d = DIRS[f.facing];
+  const pos = fighterPixel(f);
+  const len = Math.hypot(d.x, d.y) || 1;
+  const gap = TILE * 1.35;
+  return { x: pos.x + (d.x / len) * gap, y: pos.y + (d.y / len) * gap };
 }
 
 function ballDamage(match, f, power) {
@@ -579,6 +716,9 @@ function updateBalls(match, dt) {
       match.balls.splice(i, 1);
       continue;
     }
+    b.trail = b.trail || [];
+    b.trail.push({ x: b.x, y: b.y });
+    if (b.trail.length > 7) b.trail.shift();
     const dist = Math.hypot(b.vx, b.vy) * dt;
     const steps = Math.max(1, Math.ceil(dist / 4));
     const hdt = dt / steps;
@@ -589,6 +729,11 @@ function updateBalls(match, dt) {
       const tx = Math.floor(b.x / TILE);
       const ty = Math.floor(b.y / TILE);
       if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) {
+        dead = true;
+        break;
+      }
+      if (b.owner !== "player" && ghostBlocks(match, b)) {
+        pushEvent(match, { t: "block", x: match.player.tx, y: match.player.ty });
         dead = true;
         break;
       }
@@ -616,16 +761,25 @@ function updateBalls(match, dt) {
 }
 
 function chew(match, b, tx, ty, cell, id) {
-  if (cell === WALL) return true;
+  if (cell === WALL) {
+    nick(match, tx, ty, 2);
+    pushEvent(match, { t: "chip", x: tx, y: ty });
+    return true;
+  }
   const info = DIG[cell];
   if (!info) return false;
   if (cell === ROCK) {
-    match.rock[id] -= 1;
+    match.rock[id] -= b.rockDmg || 1;
+    nick(match, tx, ty, 2);
     pushEvent(match, { t: "chip", x: tx, y: ty });
-    if (match.rock[id] <= 0) openByShot(match, tx, ty);
+    if (match.rock[id] <= 0) {
+      if (b.owner === "player") takeLoot(match, tx, ty);
+      openByShot(match, tx, ty);
+    }
     return true;
   }
   if (b.pen >= info.pen) {
+    if (b.owner === "player") takeLoot(match, tx, ty);
     openByShot(match, tx, ty);
     b.pen -= info.pen;
     pushEvent(match, { t: "chip", x: tx, y: ty });
@@ -641,7 +795,7 @@ function chew(match, b, tx, ty, cell, id) {
 
 function fighterAt(match, b) {
   for (const f of [match.player, match.enemy]) {
-    if (!f || f.kind === b.owner || f.energy <= 0) continue;
+    if (!f || f.kind === b.owner || (f.energy <= 0 && f.invT <= 0)) continue;
     const p = fighterPixel(f);
     if (Math.hypot(p.x - b.x, p.y - b.y) < TILE * 0.34) return f;
   }
@@ -653,6 +807,7 @@ function resolveDeaths(match) {
   if (match.player.energy <= 0) {
     match.player.energy = 0;
     match.player.alive = false;
+    scarBlast(match, match.player.tx, match.player.ty);
     match.losses += 1;
     match.phase = match.losses >= match.winsNeeded ? "over" : "between";
     if (match.phase === "over") match.victor = "enemy";
@@ -663,6 +818,7 @@ function resolveDeaths(match) {
   if (match.enemy.energy <= 0) {
     match.enemy.energy = 0;
     match.enemy.alive = false;
+    scarBlast(match, match.enemy.tx, match.enemy.ty);
     match.wins += 1;
     match.points += 2;
     match.phase = match.wins >= match.winsNeeded ? "over" : "shop";
@@ -670,6 +826,112 @@ function resolveDeaths(match) {
     settleBoon(match);
     pushEvent(match, { t: "boom", x: match.enemy.tx, y: match.enemy.ty, kind: "enemy" });
   }
+}
+
+function scarBlast(match, cx, cy) {
+  const radius = 4;
+  for (let y = cy - radius; y <= cy + radius; y++) {
+    for (let x = cx - radius; x <= cx + radius; x++) {
+      if (x < 0 || y < 0 || x >= COLS || y >= ROWS) continue;
+      const dist = Math.hypot(x - cx, y - cy);
+      if (dist > radius) continue;
+      const i = y * COLS + x;
+      if (match.type[i] === AIR) continue;
+      const thick = dist < 2.2 ? 3 : dist < 3.4 ? 2 : 1;
+      if (thick > match.scar[i]) match.scar[i] = thick;
+      match.seen[i] = 1;
+    }
+  }
+}
+
+function nick(match, tx, ty, amount) {
+  const i = ty * COLS + tx;
+  const next = Math.min(3, match.scar[i] + amount);
+  if (next > match.scar[i]) match.scar[i] = next;
+  match.seen[i] = 1;
+}
+
+function otherDuck(match, f) {
+  const other = f.kind === "player" ? match.enemy : match.player;
+  if (!other || (!other.alive && other.invT <= 0)) return null;
+  return other;
+}
+
+function duckBlocks(match, f, x, y) {
+  const other = otherDuck(match, f);
+  if (!other) return false;
+  if (other.tx === x && other.ty === y) return true;
+  return other.moving && other.bx === x && other.by === y;
+}
+
+function duckInWay(match, f, nx, ny, d) {
+  if (duckBlocks(match, f, nx, ny)) return true;
+  if (d.x && d.y) {
+    if (duckBlocks(match, f, f.tx + d.x, f.ty)) return true;
+    if (duckBlocks(match, f, f.tx, f.ty + d.y)) return true;
+  }
+  return false;
+}
+
+function ghostBlocks(match, ball) {
+  const f = match.player;
+  if (!f || f.ghostT <= 0) return false;
+  const spot = ghostSpot(f);
+  return Math.hypot(spot.x - ball.x, spot.y - ball.y) < TILE * 0.42;
+}
+
+function plantLoot(match, rng) {
+  match.lootAt = new Uint8Array(COLS * ROWS);
+  const cells = [];
+  for (let i = 0; i < match.type.length; i++) {
+    const cell = match.type[i];
+    if (match.boon[i]) continue;
+    if (cell === SAND || cell === SOIL || cell === CLAY || cell === GRAVEL || cell === ROCK) cells.push(i);
+  }
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = (rng() * (i + 1)) | 0;
+    const swap = cells[i];
+    cells[i] = cells[j];
+    cells[j] = swap;
+  }
+  const deck = LOOT_IDS.slice();
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = (rng() * (i + 1)) | 0;
+    const swap = deck[i];
+    deck[i] = deck[j];
+    deck[j] = swap;
+  }
+  let di = 0;
+  for (let n = LOOT_EVERY - 1; n < cells.length; n += LOOT_EVERY) {
+    match.lootAt[cells[n]] = LOOT_IDS.indexOf(deck[di % deck.length]) + 1;
+    di += 1;
+  }
+}
+
+function takeLoot(match, x, y) {
+  if (!match.lootAt) return;
+  const i = y * COLS + x;
+  const code = match.lootAt[i];
+  if (!code) return;
+  match.lootAt[i] = 0;
+  const id = LOOT_IDS[code - 1];
+  if (!lootOpen(match, id)) return;
+  if (id === "jack") match.player.jackT = 20;
+  else if (id === "inv") match.player.invT = 30;
+  else if (id === "ghost") match.player.ghostT = 40;
+  else match.upgrades[id] = Math.min((match.upgrades[id] || 0) + 1, SHOP.find((entry) => entry.id === id).max);
+  pushEvent(match, { t: "loot", x, y, id });
+}
+
+function lootOpen(match, id) {
+  if (id === "jack" || id === "inv" || id === "ghost") return true;
+  const item = SHOP.find((entry) => entry.id === id);
+  return item && (match.upgrades[id] || 0) < item.max;
+}
+
+function onShelter(match, f) {
+  const id = f.ty * COLS + f.tx;
+  return match.pad[id] === 1 || match.pad[id] === 2;
 }
 
 function onOwnPad(match, f) {
@@ -1174,8 +1436,8 @@ function buildMap(match, rng) {
   }
 
   const pair = placeBunkers(match, rng);
-  carveBunker(match, pair.px, pair.py, 1, pair.pDoor);
-  carveBunker(match, pair.ex, pair.ey, 2, pair.eDoor);
+  carveBunker(match, pair.px, pair.py, 1);
+  carveBunker(match, pair.ex, pair.ey, 2);
 
   for (let i = 0; i < match.type.length; i++) {
     if (match.type[i] === ROCK) match.rock[i] = 3;
@@ -1192,6 +1454,7 @@ function buildMap(match, rng) {
   }
   revealFrom(match, match.player);
   placeBoons(match, rng);
+  plantLoot(match, rng);
   const score = `${match.wins}:${match.losses}`;
   match.banner = match.round === 1
     ? `Kolo 1 — zápas na ${match.winsNeeded}`
@@ -1216,24 +1479,10 @@ function placeBunkers(match, rng) {
 }
 
 function doors(px, py, ex, ey) {
-  return {
-    px,
-    py,
-    ex,
-    ey,
-    pDoor: mainDir(px, py, ex, ey),
-    eDoor: mainDir(ex, ey, px, py),
-  };
+  return { px, py, ex, ey };
 }
 
-function mainDir(ax, ay, bx, by) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  if (Math.abs(dx) >= Math.abs(dy)) return { x: Math.sign(dx) || 1, y: 0 };
-  return { x: 0, y: Math.sign(dy) || 1 };
-}
-
-function carveBunker(match, cx, cy, owner, door) {
+function carveBunker(match, cx, cy, owner) {
   const hw = 4;
   const hh = 3;
   for (let y = cy - hh; y <= cy + hh; y++) {
@@ -1251,19 +1500,22 @@ function carveBunker(match, cx, cy, owner, door) {
       }
     }
   }
-  const dx = cx + door.x * hw;
-  const dy = cy + door.y * hh;
-  const doorId = dy * COLS + dx;
-  match.type[doorId] = AIR;
-  match.pad[doorId] = 0;
-  for (let s = 1; s <= 3; s++) {
-    const x = dx + door.x * s;
-    const y = dy + door.y * s;
-    if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) continue;
-    const i = y * COLS + x;
-    match.type[i] = AIR;
-    match.pad[i] = 0;
-    match.rock[i] = 0;
+  const vents = [
+    { x: 1, y: 0, span: hw },
+    { x: -1, y: 0, span: hw },
+    { x: 0, y: 1, span: hh },
+    { x: 0, y: -1, span: hh },
+  ];
+  for (const door of vents) {
+    for (let s = 0; s <= 3; s++) {
+      const x = cx + door.x * (door.span + s);
+      const y = cy + door.y * (door.span + s);
+      if (x < 1 || y < 1 || x >= COLS - 1 || y >= ROWS - 1) continue;
+      const i = y * COLS + x;
+      match.type[i] = AIR;
+      match.pad[i] = 0;
+      match.rock[i] = 0;
+    }
   }
 }
 
@@ -1291,6 +1543,10 @@ function makeFighter(kind, tx, ty) {
     lowPower: false,
     holdShot: false,
     energy: 100,
+    hitGrace: 0,
+    jackT: 0,
+    invT: 0,
+    ghostT: 0,
     cool: 0,
     armorT: 0,
     armorLevel: 0,

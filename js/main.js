@@ -136,6 +136,7 @@ const view = createView();
 
 const splash = document.getElementById("splash");
 const menu = document.getElementById("menu");
+const offer = document.getElementById("offer");
 const shop = document.getElementById("shop");
 const between = document.getElementById("between");
 const pause = document.getElementById("pause");
@@ -168,6 +169,11 @@ document.getElementById("resume").addEventListener("click", () => {
 });
 document.getElementById("to-menu").addEventListener("click", () => setMode("menu"));
 document.getElementById("over-menu").addEventListener("click", () => setMode("menu"));
+document.getElementById("offer-skip").addEventListener("click", () => continueRound());
+document.getElementById("offer-shop").addEventListener("click", () => {
+  audio.click();
+  setMode("shop");
+});
 document.getElementById("next").addEventListener("click", () => continueRound());
 document.getElementById("between-next").addEventListener("click", () => continueRound());
 document.getElementById("mute").addEventListener("click", () => toggleMute());
@@ -225,15 +231,20 @@ window.addEventListener("keydown", (event) => {
     else if (mode === "pause") setMode("play");
     return;
   }
+  if (mode === "offer") {
+    if (key === "enter") continueRound();
+    if (key === "o") setMode("shop");
+    return;
+  }
   if (key === "enter") {
     if (mode === "menu" || mode === "over") startGame();
     else if (mode === "pause") setMode("play");
     else if (mode === "shop" || mode === "between") continueRound();
     return;
   }
-  if (mode === "shop" && (key === "1" || key === "2" || key === "3")) {
+  if (mode === "shop" && key >= "1" && key <= "9") {
     const item = SHOP[Number(key) - 1];
-    tryBuy(item.id);
+    if (item) tryBuy(item.id);
   }
 });
 
@@ -371,6 +382,7 @@ function setMode(next) {
   mode = next;
   splash.classList.toggle("hidden", mode !== "splash");
   menu.classList.toggle("hidden", mode !== "menu");
+  offer.classList.toggle("hidden", mode !== "offer");
   shop.classList.toggle("hidden", mode !== "shop");
   between.classList.toggle("hidden", mode !== "between");
   pause.classList.toggle("hidden", mode !== "pause");
@@ -380,6 +392,9 @@ function setMode(next) {
   if (mode === "menu") {
     status.textContent = "Menu Kačík";
     renderMenu();
+  } else if (mode === "offer") {
+    status.textContent = "Kolo je tvoje. Obchod, nebo další kolo.";
+    renderOffer();
   } else if (mode === "shop") {
     status.textContent = "Obchod mezi koly";
     renderShop();
@@ -437,7 +452,7 @@ function react(before, energy) {
     if (event.t === "boom" && event.kind === "player") audio.lose();
   }
   if (energy < 99.5 && match.player.energy >= 100) audio.tick();
-  if (before === "play" && match.phase === "shop") setMode("shop");
+  if (before === "play" && match.phase === "shop") setMode("offer");
   if (before === "play" && match.phase === "between") setMode("between");
   if (before === "play" && match.phase === "over") {
     if (match.victor === "player") {
@@ -475,6 +490,11 @@ function renderMenu() {
   }
 }
 
+function renderOffer() {
+  document.getElementById("offer-copy").textContent =
+    `Stav ${match.wins}:${match.losses} na ${match.winsNeeded}. V DuckShopu jsou GhostDuck, laser, trojstřel a pancíř. Body zůstanou, i když obchod vynecháš.`;
+}
+
 function renderShop() {
   const load = describeLoadout(match.upgrades);
   document.getElementById("round-label").textContent = `Kolo ${match.round} tvoje · ${match.wins}:${match.losses}`;
@@ -504,10 +524,12 @@ function renderShop() {
       : `Pancíř ${load.armor.seconds} s, kryje ${load.armor.absorb} %. Znovu se zapne až na 100 % života.`,
   };
   SHOP.forEach((item, index) => {
-    const level = match.upgrades[item.id];
+    const charge = item.kind === "charge";
+    const level = charge ? (match.queue[item.id] ? 1 : 0) : match.upgrades[item.id];
+    const done = charge ? match.queue[item.id] : level >= item.max;
     const button = document.createElement("button");
     button.className = "item";
-    const can = match.points >= item.cost && level < item.max;
+    const can = match.points >= item.cost && !done;
     if (item.id === "armor" && can) button.classList.add("hinted");
     button.disabled = !can;
     button.addEventListener("click", () => tryBuy(item.id));
@@ -515,11 +537,13 @@ function renderShop() {
     title.textContent = `${index + 1}  ${item.name}`;
     const cost = document.createElement("div");
     cost.className = "cost";
-    cost.textContent = level >= item.max ? "HOTOVO" : `${item.cost} BODY`;
+    cost.textContent = done ? (charge ? "PŘÍŠTÍ KOLO" : "HOTOVO") : `${item.cost} BODY`;
     const rank = document.createElement("div");
-    rank.textContent = `Stupeň ${level}/${item.max}`;
+    rank.textContent = charge
+      ? (done ? "Čeká na další kolo" : "Jedno použití")
+      : `Stupeň ${level}/${item.max}`;
     const text = document.createElement("small");
-    text.textContent = `${item.blurb} ${details[item.id]}`;
+    text.textContent = details[item.id] ? `${item.blurb} ${details[item.id]}` : item.blurb;
     button.append(title, cost, rank, text);
     root.appendChild(button);
   });
