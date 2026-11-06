@@ -1,5 +1,7 @@
 # Kačík
 
+Aktuální verze je **10**. Číslo je v `js/version.js`, ve hře vlevo dole a v titulku karty. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
 Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, pancíř 4. Body se mezi koly neztratí, takže se dají schovat. Koupené vylepšení zůstává celý zápas.
@@ -40,6 +42,6 @@ Synthrohlík dá 10 kvá krát kombo. Kombo drží deset dílků, strop je ×5. 
 
 ## Test
 
-`npm test` pustí pravidla Kačíka (`tests/sim.test.js`), jeden průchod hráče (`tests/experience.test.js`) a pravidla Kachny 3310 (`test/logic.test.js`).
+`npm test` pustí pravidla Kačíka (`tests/sim.test.js`), jeden průchod hráče (`tests/experience.test.js`), pravidla Kachny 3310 (`test/logic.test.js`) a shodu čísla verze (`tests/version.test.js`).
 
 Ve hře stačí minuta: Na 3, vyjít z krytu, prostřílet pár polí, vrátit se a počkat na 100 %. Výstřel má být slyšet přes hudbu. Kvákání po zásahu ne častěji než jednou za dvě sekundy.
