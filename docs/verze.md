@@ -4,6 +4,10 @@
 
 Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
 
+## 12 — 6. 11. 2026
+
+Nápis verze sedí ve volném pruhu nad panely, linka panelu ho nepřekrývá. Kryt má zase čtyři východy, na každé straně jeden. Jeden východ se ztratil ve funkci `carveBunker`, když se hra rozešla od verze 9. Tam se otvíraly všechny čtyři strany.
+
 ## 11 — 6. 11. 2026
 
 Na telefonu je znovu kruhový knipl a kulaté tlačítko střelby, mezi nimi Pauza. Šipkový kříž z verze 10 je pryč. Výhra na kola, kostičky, text nad kačenou a vzhled soupeře zůstávají.

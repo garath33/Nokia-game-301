@@ -651,12 +651,13 @@ function screenLayout(w, h) {
   const radarSize = narrow ? 104 : 168;
   const radar = {
     x: w - radarSize - (narrow ? 8 : 14),
-    y: narrow ? 8 : 14,
+    y: 30,
     size: radarSize,
   };
   return {
     narrow,
     radar,
+    top: 30,
     panelW: narrow ? Math.max(150, radar.x - 22) : Math.min(300, w - 36),
   };
 }
@@ -735,26 +736,27 @@ function drawHud(ctx, w, h, match, theme, ui) {
   const load = duckLevel(match.upgrades);
   const panelW = ui.panelW;
   const panelH = ui.narrow ? 108 : (match.found?.power || match.found?.rate ? 158 : 136);
+  const top = ui.top;
   ctx.fillStyle = theme.panel;
-  ctx.fillRect(14, 14, panelW, panelH);
+  ctx.fillRect(14, top, panelW, panelH);
   ctx.strokeStyle = theme.line;
   ctx.lineWidth = 2;
-  ctx.strokeRect(15, 15, panelW - 2, panelH - 2);
+  ctx.strokeRect(15, top + 1, panelW - 2, panelH - 2);
 
   ctx.fillStyle = theme.text;
   ctx.font = ui.narrow ? "13px ui-monospace, monospace" : "14px ui-monospace, monospace";
   const score = `${match.wins}:${match.losses}`;
   if (ui.narrow) {
-    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b`, 26, 34);
+    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b`, 26, top + 20);
   } else {
-    ctx.fillText(`KOLO ${match.round}`, 28, 36);
-    ctx.fillText(`BODY ${match.points}`, 150, 36);
-    ctx.fillText(`ZÁPAS ${score} NA ${match.winsNeeded}`, 28, 54);
-    ctx.fillText(`ÚR ${load}`, 230, 54);
+    ctx.fillText(`KOLO ${match.round}`, 28, top + 22);
+    ctx.fillText(`BODY ${match.points}`, 150, top + 22);
+    ctx.fillText(`ZÁPAS ${score} NA ${match.winsNeeded}`, 28, top + 40);
+    ctx.fillText(`ÚR ${load}`, 230, top + 40);
   }
 
   const life = Math.max(0, Math.min(100, Math.round(match.player.energy)));
-  const barY = ui.narrow ? 46 : 68;
+  const barY = top + (ui.narrow ? 32 : 54);
   labeledBar(ctx, 28, barY, panelW - 28, match.player.energy / 100, theme.good, `ŽIVOT ${life} %`, theme);
   const armorPct = armorFraction(match.player);
   const armorLabel = match.player.armorLevel > 0
@@ -881,7 +883,7 @@ function drawBanner(ctx, w, match, theme, ui) {
   const gapLeft = 14 + ui.panelW + 12;
   const gapRight = ui.radar.x - 12;
   const fits = !ui.narrow && width < gapRight - gapLeft;
-  const y = fits ? 48 : ui.radar.y + ui.radar.size + 22;
+  const y = fits ? ui.top + 34 : ui.radar.y + ui.radar.size + 22;
   ctx.fillStyle = theme.text;
   ctx.textAlign = "center";
   ctx.fillText(match.banner, w / 2, y);

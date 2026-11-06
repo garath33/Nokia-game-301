@@ -87,7 +87,25 @@ for (let seed = 1; seed <= 25; seed++) {
     else assert(match.enemy.armorT === 0, "no enemy armor");
     const path = findPath(match.type, match.player.tx, match.player.ty, match.enemy.tx, match.enemy.ty);
     assert(path && path.length > 5, "path exists");
+    assert(bunkerExits(match, match.player.homeX, match.player.homeY) === 4, `player exits ${seed} ${difficulty}`);
+    assert(bunkerExits(match, match.enemy.homeX, match.enemy.homeY) === 4, `enemy exits ${seed} ${difficulty}`);
   }
+}
+
+function bunkerExits(match, cx, cy) {
+  const vents = [
+    [1, 0, 4],
+    [-1, 0, 4],
+    [0, 1, 3],
+    [0, -1, 3],
+  ];
+  let open = 0;
+  for (const [dx, dy, span] of vents) {
+    const x = cx + dx * span;
+    const y = cy + dy * span;
+    if (match.type[y * COLS + x] === AIR) open += 1;
+  }
+  return open;
 }
 
 assert(facingToward(0, 0, 4, 0) === 2, "face east");

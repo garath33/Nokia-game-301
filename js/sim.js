@@ -1174,8 +1174,8 @@ function buildMap(match, rng) {
   }
 
   const pair = placeBunkers(match, rng);
-  carveBunker(match, pair.px, pair.py, 1, pair.pDoor);
-  carveBunker(match, pair.ex, pair.ey, 2, pair.eDoor);
+  carveBunker(match, pair.px, pair.py, 1);
+  carveBunker(match, pair.ex, pair.ey, 2);
 
   for (let i = 0; i < match.type.length; i++) {
     if (match.type[i] === ROCK) match.rock[i] = 3;
@@ -1216,24 +1216,10 @@ function placeBunkers(match, rng) {
 }
 
 function doors(px, py, ex, ey) {
-  return {
-    px,
-    py,
-    ex,
-    ey,
-    pDoor: mainDir(px, py, ex, ey),
-    eDoor: mainDir(ex, ey, px, py),
-  };
+  return { px, py, ex, ey };
 }
 
-function mainDir(ax, ay, bx, by) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  if (Math.abs(dx) >= Math.abs(dy)) return { x: Math.sign(dx) || 1, y: 0 };
-  return { x: 0, y: Math.sign(dy) || 1 };
-}
-
-function carveBunker(match, cx, cy, owner, door) {
+function carveBunker(match, cx, cy, owner) {
   const hw = 4;
   const hh = 3;
   for (let y = cy - hh; y <= cy + hh; y++) {
@@ -1251,19 +1237,22 @@ function carveBunker(match, cx, cy, owner, door) {
       }
     }
   }
-  const dx = cx + door.x * hw;
-  const dy = cy + door.y * hh;
-  const doorId = dy * COLS + dx;
-  match.type[doorId] = AIR;
-  match.pad[doorId] = 0;
-  for (let s = 1; s <= 3; s++) {
-    const x = dx + door.x * s;
-    const y = dy + door.y * s;
-    if (x < 2 || y < 2 || x >= COLS - 2 || y >= ROWS - 2) continue;
-    const i = y * COLS + x;
-    match.type[i] = AIR;
-    match.pad[i] = 0;
-    match.rock[i] = 0;
+  const vents = [
+    { x: 1, y: 0, span: hw },
+    { x: -1, y: 0, span: hw },
+    { x: 0, y: 1, span: hh },
+    { x: 0, y: -1, span: hh },
+  ];
+  for (const door of vents) {
+    for (let s = 0; s <= 3; s++) {
+      const x = cx + door.x * (door.span + s);
+      const y = cy + door.y * (door.span + s);
+      if (x < 1 || y < 1 || x >= COLS - 1 || y >= ROWS - 1) continue;
+      const i = y * COLS + x;
+      match.type[i] = AIR;
+      match.pad[i] = 0;
+      match.rock[i] = 0;
+    }
   }
 }
 
