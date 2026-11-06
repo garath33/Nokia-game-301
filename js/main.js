@@ -1,4 +1,5 @@
 import { createAudio } from "./audio.js";
+import { GAME_VERSION, showVersion } from "./version.js";
 import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
   DIFFICULTIES,
@@ -127,6 +128,7 @@ const THEMES = {
 };
 
 const SAVE_KEY = "tunik-save";
+showVersion("Kačík");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d", { alpha: false });
 const audio = createAudio();

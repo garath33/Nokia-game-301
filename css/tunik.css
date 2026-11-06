@@ -59,6 +59,21 @@ button, input { font-family: inherit; }
   background: #000;
 }
 
+.game-version {
+  position: fixed;
+  left: 12px;
+  bottom: 56px;
+  z-index: 20;
+  margin: 0;
+  pointer-events: none;
+  color: var(--accent);
+  font-family: var(--body);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 #000, 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
 #fx {
   pointer-events: none;
   position: fixed;
