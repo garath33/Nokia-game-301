@@ -35,7 +35,7 @@
         <div>
           <h1>KAČÍK</h1>
           <p class="sub">Kachní tunelovka</p>
-          <p class="sub" data-version>verze 10</p>
+          <p class="sub" data-version>verze 11</p>
         </div>
       </div>
       <p id="menu-lead" class="lead">Žlutá kačenka proti světle šedému soupeři s oranžovým zobákem a ocasem ze tří per. Při pancíři si hráč nasadí stříbrnou helmu. Mapa je z písku, hlíny, jílu, štěrku a skály, střílí se malými golfovými míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.</p>
@@ -60,7 +60,7 @@
       </div>
       <div id="swatches" class="swatches"></div>
       <div class="help">
-        <div><strong>Pohyb</strong><span>Šipky nebo WASD hrabou tunel. Šikmo jde taky.</span></div>
+        <div><strong>Pohyb</strong><span>Na telefonu kruhový knipl, na počítači šipky nebo WASD. Šikmo jde taky. Vpravo je kulatá střelba.</span></div>
         <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku. Zářící kostička přidá průraz nebo kadenci ještě na příští kolo.</span></div>
         <div><strong>Body</strong><span>Sestřel dá 2 body. Účinnost a kadence stojí 2, pancíř 4.</span></div>
       </div>
@@ -127,20 +127,19 @@
   </section>
 
   <div id="touch" class="touch hidden">
-    <span class="blank"></span>
-    <button id="up" type="button" aria-label="Nahoru">↑</button>
+    <div id="stick" class="stick" aria-label="Pohyb. Střed je klid, prst od středu určuje směr.">
+      <div class="stick-knob"></div>
+    </div>
     <button id="fire" type="button" aria-label="Střelba">●</button>
-    <button id="left" type="button" aria-label="Doleva">←</button>
-    <button id="down" type="button" aria-label="Dolů">↓</button>
-    <button id="right" type="button" aria-label="Doprava">→</button>
   </div>
+  <button id="pause-btn" class="hidden" type="button">PAUZA</button>
 
   <section id="splash" class="splash" tabindex="0" aria-label="Kačík. Klepni a pokračuj do menu.">
     <img class="splash-art" src="img/splash.jpg" alt="">
     <p class="poster-hint">Klepni kamkoliv</p>
   </section>
 
-  <p class="game-version" data-version>verze 10</p>
+  <p class="game-version" data-version>verze 11</p>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

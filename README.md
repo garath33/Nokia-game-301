@@ -1,6 +1,6 @@
 # Kačík
 
-Aktuální verze je **10**. Číslo je v `js/version.js`, ve hře vlevo dole a v titulku karty. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **11**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
@@ -20,7 +20,7 @@ npm start
 
 Pak otevři `http://localhost:8765`.
 
-Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M ztlumí zvuk, Esc je pauza.
+Na telefonu je vlevo kruhový knipl a vpravo kulatá střelba. Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M ztlumí zvuk, Esc nebo tlačítko Pauza je pauza.
 
 V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (dvě fialové na kostkách i na kačence, tyrkysový zobák, obrys a potrubí, soupeř černobílý).
 
