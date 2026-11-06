@@ -160,7 +160,7 @@ export const SHOP = [
     cost: 4,
     max: 2,
     name: "Pancíř",
-    blurb: "Po dobití na 100 % chrání delší dobu. Zásah schytá hlavně on.",
+    blurb: "Po dobití na 100 % chrání delší dobu a kačenka si nasadí stříbrnou helmu. Zásah schytá hlavně pancíř.",
   },
 ];
 
