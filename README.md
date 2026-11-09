@@ -1,6 +1,6 @@
 # Kačík
 
-Aktuální verze je **11**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **13**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
@@ -28,6 +28,9 @@ V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru
 
 - Soupeř používá stejné hrabání, střelbu, úbytek života a dobíjení ve svém krytu.
 - Každé kolo si soupeř postaví kryt jinde. Každá hra začíná jiným rozložením.
+- Z krytu se jde ven na všechny čtyři strany. Dobít se dá v každém krytu, vlastním i soupeřově.
+- Po výhře kola jdeš do DuckShopu, nebo ho vynecháš. GhostDuck, laser, trojstřel, rychlost chůze, Zbíječka a nezranitelnost se kupují za body a koupené stupně drží celý zápas. V zemi jsou navíc nálezy.
+- Kačenky se do sebe zaseknou. Střela nechá na zdi a skále šrám a míček má krátkou stopu. Laser řeže natrvalo. Zásah chvíli nepočítá znovu.
 - Na radaru se občas mihne nepřesná tečka. Blízké hrabání je slyšet.
 - Světlo z kačenky neprochází hlínou. Vlastní tunely zůstávají v paměti tmavší.
 - Na těžké obtížnosti má soupeř od začátku krátký pancíř. S každým dalším kolem je ostřejší.
