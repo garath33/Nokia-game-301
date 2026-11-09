@@ -80,6 +80,7 @@ assert(sand.spent < 3 && rock.spent > 7, "density gap is obvious in one tile");
   assert(match.wins === 1 && match.phase === "shop", "a kill is one win and opens the shop");
   match.wins = 2;
   match.enemy.energy = 1;
+  match.enemy.hitGrace = 0;
   match.phase = "play";
   strike(match, match.enemy, 50);
   step(match, idle, 0.05);

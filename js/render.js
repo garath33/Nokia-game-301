@@ -14,6 +14,7 @@ import {
   GIFT,
   duckLevel,
   fighterPixel,
+  ghostSpot,
 } from "./sim.js";
 
 export function createView() {
@@ -104,6 +105,13 @@ export function drawWorld(ctx, w, h, match, theme, view, time, dt) {
 
   if (enemyVisible(match)) drawDuck(ctx, match.enemy, theme.enemy, theme, time);
   drawDuck(ctx, match.player, theme.player, theme, time);
+  if (match.player.ghostT > 0) {
+    const spot = ghostSpot(match.player);
+    ctx.save();
+    ctx.globalAlpha = 0.42;
+    drawDuckAt(ctx, spot.x, spot.y, match.player.facing, theme.player, theme, time, false, false, false);
+    ctx.restore();
+  }
   drawFlecks(ctx, match, view, dt);
   drawGift(ctx, match, theme);
 
@@ -217,6 +225,21 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
     }
   }
   if (match.boon && match.boon[i]) drawBoon(ctx, theme, px, py, match.boon[i], time, light);
+  if (match.lootAt && match.lootAt[i] && !match.boon[i]) {
+    ctx.fillStyle = theme.good;
+    ctx.globalAlpha = light < 1 ? 0.35 : 0.8;
+    ctx.fillRect(px + 12, py + 12, 4, 4);
+  }
+  if (match.scar && match.scar[i]) {
+    ctx.strokeStyle = theme.crack;
+    ctx.globalAlpha = 0.28 * match.scar[i];
+    ctx.beginPath();
+    ctx.moveTo(px + 3, py + 6);
+    ctx.lineTo(px + TILE - 4, py + TILE - 5);
+    ctx.moveTo(px + TILE - 5, py + 4);
+    ctx.lineTo(px + 5, py + TILE - 4);
+    ctx.stroke();
+  }
   ctx.globalAlpha = 1;
 }
 
@@ -351,10 +374,24 @@ function drawLamp(ctx, theme, f, time, match, owner) {
 }
 
 function drawBall(ctx, ball, theme) {
-  const color = ball.owner === "player" ? theme.ball : theme.ballEnemy;
+  const color = ball.laser ? "#ff2a55" : ball.owner === "player" ? theme.ball : theme.ballEnemy;
+  if (ball.trail && ball.trail.length) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.45;
+    ctx.lineWidth = ball.laser ? 2 : 1.5;
+    ctx.beginPath();
+    ball.trail.forEach((point, index) => {
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    });
+    ctx.lineTo(ball.x, ball.y);
+    ctx.stroke();
+    ctx.restore();
+  }
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, 3.1, 0, Math.PI * 2);
+  ctx.arc(ball.x, ball.y, ball.laser ? 3.6 : 3.1, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "rgba(255,255,255,.8)";
   ctx.fillRect(ball.x - 1, ball.y - 1, 1, 1);
@@ -362,7 +399,7 @@ function drawBall(ctx, ball, theme) {
 
 function drawDuck(ctx, f, palette, theme, time) {
   const pos = fighterPixel(f);
-  const armor = f.armorT > 0 && f.armorLevel > 0;
+  const armor = (f.armorT > 0 && f.armorLevel > 0) || f.invT > 0;
   drawDuckAt(ctx, pos.x, pos.y, f.facing, palette, theme, time, f.digging, armor, f.kind === "enemy");
   const pct = clamp(f.energy / 100, 0, 1);
   ctx.fillStyle = "rgba(0,0,0,.55)";
@@ -735,12 +772,13 @@ function screenLayout(w, h) {
   const radarSize = narrow ? 104 : 168;
   const radar = {
     x: w - radarSize - (narrow ? 8 : 14),
-    y: narrow ? 8 : 14,
+    y: 30,
     size: radarSize,
   };
   return {
     narrow,
     radar,
+    top: 30,
     panelW: narrow ? Math.max(150, radar.x - 22) : Math.min(300, w - 36),
   };
 }
@@ -819,26 +857,27 @@ function drawHud(ctx, w, h, match, theme, ui) {
   const load = duckLevel(match.upgrades);
   const panelW = ui.panelW;
   const panelH = ui.narrow ? 108 : (match.found?.power || match.found?.rate ? 158 : 136);
+  const top = ui.top;
   ctx.fillStyle = theme.panel;
-  ctx.fillRect(14, 14, panelW, panelH);
+  ctx.fillRect(14, top, panelW, panelH);
   ctx.strokeStyle = theme.line;
   ctx.lineWidth = 2;
-  ctx.strokeRect(15, 15, panelW - 2, panelH - 2);
+  ctx.strokeRect(15, top + 1, panelW - 2, panelH - 2);
 
   ctx.fillStyle = theme.text;
   ctx.font = ui.narrow ? "13px ui-monospace, monospace" : "14px ui-monospace, monospace";
   const score = `${match.wins}:${match.losses}`;
   if (ui.narrow) {
-    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b`, 26, 34);
+    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b`, 26, top + 20);
   } else {
-    ctx.fillText(`KOLO ${match.round}`, 28, 36);
-    ctx.fillText(`BODY ${match.points}`, 150, 36);
-    ctx.fillText(`ZÁPAS ${score} NA ${match.winsNeeded}`, 28, 54);
-    ctx.fillText(`ÚR ${load}`, 230, 54);
+    ctx.fillText(`KOLO ${match.round}`, 28, top + 22);
+    ctx.fillText(`BODY ${match.points}`, 150, top + 22);
+    ctx.fillText(`ZÁPAS ${score} NA ${match.winsNeeded}`, 28, top + 40);
+    ctx.fillText(`ÚR ${load}`, 230, top + 40);
   }
 
   const life = Math.max(0, Math.min(100, Math.round(match.player.energy)));
-  const barY = ui.narrow ? 46 : 68;
+  const barY = top + (ui.narrow ? 32 : 54);
   labeledBar(ctx, 28, barY, panelW - 28, match.player.energy / 100, theme.good, `ŽIVOT ${life} %`, theme);
   const armorPct = armorFraction(match.player);
   const armorLabel = match.player.armorLevel > 0
@@ -886,7 +925,7 @@ function armorFraction(f) {
 
 function hudHint(match) {
   const p = match.player;
-  const onPad = match.pad[p.ty * COLS + p.tx] === 1;
+  const onPad = match.pad[p.ty * COLS + p.tx] > 0;
   if (p.holdShot) return "V krytu se na výstřel čeká. Život se dobíjí.";
   if (p.lowPower) return "Málo života na probití. Vrať se do krytu.";
   if (p.digging) return `Probíjíš: ${p.digName}. Střela je rychlejší a žere víc.`;
@@ -896,6 +935,9 @@ function hudHint(match) {
     }
     return `Dobíjení ${Math.floor(p.energy)} %. Počkej, až se život vrátí naplno.`;
   }
+  if (p.ghostT > 0) return `GhostDuck ${Math.ceil(p.ghostT)} s. Střílí s tebou.`;
+  if (p.invT > 0) return `Nezranitelnost ${Math.ceil(p.invT)} s.`;
+  if (p.jackT > 0) return `Zbíječka ${Math.ceil(p.jackT)} s. Zem i pilíře povolí.`;
   if (onPad) return "Kryt je plný. Můžeš zase ven.";
   if (p.energy < 34) return "Život dochází. Šipka K vede do tvého krytu.";
   const boon = boonLine(match);
@@ -929,14 +971,15 @@ function drawMarkers(ctx, w, h, match, theme, view) {
   ctx.font = "12px ui-monospace, monospace";
   ctx.fillText("K", cx - 4, cy + 4);
 
-  if (!match.rumor || match.rumor.ttl <= 0) return;
-  const rx = (match.rumor.x + 0.5) * TILE - view.camX;
-  const ry = (match.rumor.y + 0.5) * TILE - view.camY;
+  const cue = match.shotCue && match.shotCue.ttl > 0 ? match.shotCue : match.rumor;
+  if (!cue || cue.ttl <= 0) return;
+  const rx = (cue.x + 0.5) * TILE - view.camX;
+  const ry = (cue.y + 0.5) * TILE - view.camY;
   const mx = clamp(rx, 28, w - 190);
   const my = clamp(ry, 140, h - 70);
   ctx.fillStyle = theme.danger;
   ctx.font = "12px ui-monospace, monospace";
-  ctx.fillText("HRABE", mx - 18, my);
+  ctx.fillText(cue === match.shotCue ? "STŘÍLÍ" : "HRABE", mx - 18, my);
 }
 
 function drawGift(ctx, match, theme) {
@@ -965,7 +1008,7 @@ function drawBanner(ctx, w, match, theme, ui) {
   const gapLeft = 14 + ui.panelW + 12;
   const gapRight = ui.radar.x - 12;
   const fits = !ui.narrow && width < gapRight - gapLeft;
-  const y = fits ? 48 : ui.radar.y + ui.radar.size + 22;
+  const y = fits ? ui.top + 34 : ui.radar.y + ui.radar.size + 22;
   ctx.fillStyle = theme.text;
   ctx.textAlign = "center";
   ctx.fillText(match.banner, w / 2, y);

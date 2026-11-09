@@ -88,7 +88,25 @@ for (let seed = 1; seed <= 25; seed++) {
     else assert(match.enemy.armorT === 0, "no enemy armor");
     const path = findPath(match.type, match.player.tx, match.player.ty, match.enemy.tx, match.enemy.ty);
     assert(path && path.length > 5, "path exists");
+    assert(bunkerExits(match, match.player.homeX, match.player.homeY) === 4, `player exits ${seed} ${difficulty}`);
+    assert(bunkerExits(match, match.enemy.homeX, match.enemy.homeY) === 4, `enemy exits ${seed} ${difficulty}`);
   }
+}
+
+function bunkerExits(match, cx, cy) {
+  const vents = [
+    [1, 0, 4],
+    [-1, 0, 4],
+    [0, 1, 3],
+    [0, -1, 3],
+  ];
+  let open = 0;
+  for (const [dx, dy, span] of vents) {
+    const x = cx + dx * span;
+    const y = cy + dy * span;
+    if (match.type[y * COLS + x] === AIR) open += 1;
+  }
+  return open;
 }
 
 assert(facingToward(0, 0, 4, 0) === 2, "face east");
@@ -122,12 +140,13 @@ assert(facingToward(0, 0, -4, 0) === 6, "face west");
   match.player.energy = 40;
   step(match, idle, 1);
   close(match.player.energy, 40 + match.diff.regen * SHELTER_REGEN, 0.2, "regen on own pad");
+  match.grace = 10;
   match.enemy.tx = match.player.tx;
   match.enemy.ty = match.player.ty;
+  match.enemy.moving = false;
   match.enemy.energy = 40;
-  match.diff.regen = 0;
-  step(match, idle, 1);
-  assert(match.enemy.energy < 40, "enemy drains inside your bunker");
+  step(match, idle, 0.05);
+  assert(match.enemy.energy > 40, "any shelter refills, including the rival bunker");
 }
 
 {
@@ -460,6 +479,7 @@ assert(densityOf(GRAVEL) < densityOf(ROCK), "gravel is lighter than rock");
   match.enemy.tx = 2;
   match.enemy.ty = 3;
   match.enemy.energy = 4;
+  match.enemy.hitGrace = 0;
   match.phase = "play";
   strike(match, match.enemy, 40);
   step(match, idle, 0.05);
@@ -627,6 +647,40 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   step(match, idle, 0.05);
   assert(match.enemy.tx === x && match.enemy.ty === y, "rival can cross the tile");
   assert(match.found.power === 0 && match.boon[id] === BOON_POWER, "only the player collects a lucky tile");
+}
+
+{
+  const match = createMatch({ seed: 2, difficulty: "normal" });
+  match.phase = "shop";
+  match.points = 8;
+  assert(buy(match, "ghost").ok, "buy ghost");
+  assert(match.queue.ghost, "ghost waits for the next round");
+  assert(buy(match, "spread").ok, "buy spread");
+  startNextRound(match);
+  assert(match.player.ghostT === 40, "ghost starts with the round");
+  match.player.energy = 90;
+  match.grace = 0;
+  match.player.tx = 20;
+  match.player.ty = 20;
+  match.player.facing = 2;
+  for (let y = 18; y <= 22; y++) {
+    for (let x = 19; x <= 30; x++) match.type[y * COLS + x] = AIR;
+  }
+  const before = match.balls.length;
+  step(match, shoot, 0.05);
+  assert(match.balls.length === before + 6, "spread and ghost each fire three");
+  match.balls.length = 0;
+  match.player.cool = 0;
+  match.type[20 * COLS + 21] = WALL;
+  step(match, shoot, 0.05);
+  assert(match.scar[20 * COLS + 21] > 0, "a shot scars the wall");
+  match.grace = 10;
+  match.player.tx = match.enemy.homeX;
+  match.player.ty = match.enemy.homeY;
+  match.player.moving = false;
+  const parked = match.player.energy;
+  step(match, idle, 0.4);
+  assert(match.player.energy >= parked, "the player refills in the rival shelter");
 }
 
 if (failed) {
