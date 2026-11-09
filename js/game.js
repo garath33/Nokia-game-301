@@ -1,4 +1,5 @@
 import { drawScene } from './draw.js';
+import { showVersion } from './version.js';
 import {
   COMBO_MAX,
   COMBO_WINDOW,
@@ -95,6 +96,7 @@ const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 for (let i = 0; i < COMBO_WINDOW; i += 1) hudMeter.append(document.createElement('i'));
 
+showVersion('Kachna 3310');
 document.querySelector('#tagline').textContent = COPY.tagline;
 document.querySelector('#flash').textContent = COPY.flash;
 document.querySelector('#legal').textContent = COPY.legal;

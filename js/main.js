@@ -1,8 +1,11 @@
 import { createAudio } from "./audio.js";
+import { GAME_VERSION, showVersion } from "./version.js";
 import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
   DIFFICULTIES,
   SHOP,
+  GIFT,
+  VICTORY,
   WINS_OPTIONS,
   buy,
   createMatch,
@@ -13,7 +16,35 @@ import {
 } from "./sim.js";
 
 const CLASSIC_DUCK = { body: "#ffd000", wing: "#f2a400", beak: "#ff7a00", eye: "#2b1608" };
-const RIVAL_DUCK = { body: "#ffd000", wing: "#e09400", beak: "#ff7a00", eye: "#2b1608" };
+const RIVAL_DUCK = {
+  body: "#d5d8de",
+  bodyEdge: "#8d939c",
+  head: "#f7f8fa",
+  eye: "#6e1420",
+  beak: "#f07812",
+  tail: "#2a2f36",
+  outline: "#16181c",
+  life: "#6e1420",
+};
+const RIVAL_DUCK_CYBER = {
+  body: "#f2f2f2",
+  bodyEdge: "#6e6e6e",
+  head: "#ffffff",
+  eye: "#111111",
+  beak: "#1a1a1a",
+  tail: "#111111",
+  outline: "#000000",
+  life: "#f4f4f4",
+};
+const CYBER_DUCK = {
+  body: "#64248f",
+  tile: "#c43d96",
+  wing: "#c43d96",
+  beak: "#2ee6d6",
+  eye: "#140814",
+  rim: "#2ee6d6",
+  glint: "#2ee6d6",
+};
 
 const THEMES = {
   classic: {
@@ -51,48 +82,53 @@ const THEMES = {
     glow: false,
     glowA: "#3dffe8",
     glowB: "#ff2a55",
-    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#e6c36a", "#8d8a82"],
+    swatch: ["#6b3a12", "#ffd000", "#ff7a00", "#d5d8de", "#6e1420"],
   },
   cyber: {
     id: "cyber",
     name: "Cyberpunk",
     void: "#070014",
     air: "#090015",
-    soil: ["#1a0b30", "#241244", "#31185a", "#1a1038"],
-    clay: ["#3a1468", "#4a1878", "#2a0e48"],
-    rock: ["#101826", "#18283a", "#0c141e"],
-    wall: "#12383c",
-    wallHi: "#3dffe8",
-    pad: "#062428",
-    padEnemy: "#2a0614",
-    padLine: "#ff2a55",
-    crack: "#ff2a55",
-    mote: "#d46bff",
-    player: CLASSIC_DUCK,
-    enemy: RIVAL_DUCK,
-    sand: ["#6a4a98", "#7c5aaa", "#543880"],
-    gravel: ["#243044", "#1a2838", "#314258"],
+    soil: ["#64248f", "#54207a", "#c43d96", "#a83280"],
+    clay: ["#d452a4", "#b03888", "#e060b0", "#8e2874"],
+    rock: ["#1c1430", "#2a1c44", "#141024", "#321e50"],
+    wall: "#12343a",
+    wallHi: "#2ee6d6",
+    pad: "#0e2428",
+    padEnemy: "#2a1030",
+    padLine: "#2ee6d6",
+    padLineEnemy: "#c43d96",
+    crack: "#2ee6d6",
+    mote: "#c43d96",
+    grout: "#14081c",
+    spark: "#2ee6d6",
+    tiles: true,
+    player: CYBER_DUCK,
+    enemy: RIVAL_DUCK_CYBER,
+    sand: ["#e7a0d4", "#d080c0", "#f0b8e4", "#c068b0"],
+    gravel: ["#3a3480", "#2c3e78", "#4a3c90", "#243868"],
     ball: "#b8fff8",
-    ballEnemy: "#ff4a6a",
+    ballEnemy: "#f2f2f2",
     shield: "#d46bff",
-    good: "#3dffe8",
+    good: "#2ee6d6",
     danger: "#ff2a55",
     text: "#f6eeff",
     muted: "#c4a6e4",
-    line: "#3dffe8",
+    line: "#2ee6d6",
     panel: "rgba(10,4,20,.9)",
     radarAir: "#14081f",
     radarDirt: "#3a1868",
     radarPad: "#0e6e78",
     radarSweep: "rgba(255,42,85,.9)",
     glow: true,
-    glowA: "rgba(61,255,232,.85)",
-    glowB: "rgba(255,42,85,.8)",
-    swatch: ["#241244", "#ffd000", "#ff7a00", "#3dffe8", "#ff2a55"],
+    glowA: "rgba(46,230,214,.9)",
+    glowB: "rgba(196,61,150,.8)",
+    swatch: ["#64248f", "#c43d96", "#2ee6d6", "#f2f2f2", "#111111"],
   },
 };
 
 const SAVE_KEY = "tunik-save";
+showVersion("Kačík");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d", { alpha: false });
 const audio = createAudio();
@@ -299,7 +335,9 @@ function setMode(next) {
     status.textContent = "Kolo pro soupeře";
     renderBetween();
   } else if (mode === "over") {
-    status.textContent = "Konec hry";
+    status.textContent = match && match.victor === "player"
+      ? `${VICTORY.title} ${VICTORY.creed}`
+      : "Konec hry";
     renderOver();
   } else if (mode === "pause") status.textContent = "Pauza";
   else status.textContent = `Kolo ${match.round}`;
@@ -335,7 +373,15 @@ function react(before, energy) {
       audio.hit(event.kind === "player");
       if (event.kind === "player") audio.quack();
     }
-    if (event.t === "boom" && event.kind === "enemy") audio.win();
+    if (event.t === "boon") {
+      audio.boon();
+      const what = event.id === "power" ? GIFT.power : GIFT.rate;
+      status.textContent = `${GIFT.line} ${GIFT.name} ${what}`;
+    }
+    if (event.t === "boom" && event.kind === "enemy") {
+      if (match.phase === "over" && match.victor === "player") audio.triumph();
+      else audio.win();
+    }
     if (event.t === "boom" && event.kind === "player") audio.lose();
   }
   if (energy < 99.5 && match.player.energy >= 100) audio.tick();
@@ -351,6 +397,9 @@ function react(before, energy) {
 }
 
 function renderMenu() {
+  document.getElementById("menu-lead").textContent = themeId === "cyber"
+    ? "Kačenka je ze dvou fialových a tyrkysového zobáku. Zem pod ní jsou fialové kostky ve dvou odstínech, spáry a potrubí svítí tyrkysově. Soupeř je černobílý a při pancíři má hráč stříbrnou helmu. Zápas se hraje na 3, 5 nebo 8 vítězných kol."
+    : "Žlutá kačenka proti světle šedému soupeři s oranžovým zobákem a ocasem ze tří per. Při pancíři si hráč nasadí stříbrnou helmu. Mapa je z písku, hlíny, jílu, štěrku a skály a malé golfové míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.";
   document.getElementById("blurb").textContent = DIFFICULTIES[difficulty].blurb;
   document.getElementById("best").textContent = best
     ? `Vyhrané zápasy: ${best}`
@@ -431,9 +480,15 @@ function renderBetween() {
 
 function renderOver() {
   const won = match.victor === "player";
-  document.getElementById("over-title").textContent = won ? "Zápas je tvůj" : "Soupeř vyhrál zápas";
+  document.getElementById("over-card").classList.toggle("victory", won);
+  document.getElementById("over-duck").classList.toggle("hidden", !won);
+  document.getElementById("over-title").textContent = won ? VICTORY.title : "Soupeř vyhrál zápas";
+  const creed = document.getElementById("over-creed");
+  creed.textContent = won ? VICTORY.creed : "";
+  creed.classList.toggle("hidden", !won);
+  const rounds = match.winsNeeded < 5 ? "kola" : "kol";
   document.getElementById("over-copy").textContent = won
-    ? `Výhra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}. Vyhraných zápasů: ${best}.`
+    ? `Zápas na ${match.winsNeeded} ${rounds} je tvůj. Stav ${match.wins}:${match.losses}. Bodů zbylo ${match.points}. Vyhraných zápasů: ${best}.`
     : `Prohra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}.`;
 }
 
