@@ -358,6 +358,7 @@ function startGame() {
   view.ready = false;
   view.particles.length = 0;
   view.floaters.length = 0;
+  view.flecks.length = 0;
   view.blip = null;
   setMode("play");
 }
@@ -367,6 +368,7 @@ function continueRound() {
   audio.click();
   startNextRound(match);
   view.ready = false;
+  view.flecks.length = 0;
   setMode("play");
 }
 

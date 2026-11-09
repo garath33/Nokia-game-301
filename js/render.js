@@ -24,6 +24,7 @@ export function createView() {
     shake: 0,
     particles: [],
     floaters: [],
+    flecks: [],
     radar: 0,
     blip: null,
     blipT: 0,
@@ -50,6 +51,7 @@ export function noteEvents(view, match, theme) {
     }
     if (event.t === "boom") view.shake = 9;
     if (event.t === "shoot") burst(view, event.x, event.y, theme, 2);
+    if (event.t === "smudge") addFleck(view, event.x, event.y);
   }
 }
 
@@ -110,6 +112,7 @@ export function drawWorld(ctx, w, h, match, theme, view, time, dt) {
     drawDuckAt(ctx, spot.x, spot.y, match.player.facing, theme.player, theme, time, false, false, false);
     ctx.restore();
   }
+  drawFlecks(ctx, match, view, dt);
   drawGift(ctx, match, theme);
 
   updateBits(ctx, view, dt);
@@ -209,6 +212,8 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
     ctx.globalAlpha = light < 1 ? 0.55 : 1;
   } else if (cell === WALL) {
     paintWall(ctx, theme, px, py);
+    const bites = match.scars && match.scars.get(i);
+    if (bites && bites.length) carveScars(ctx, theme, px, py, bites);
   } else {
     const cracks = digCracks(match, x, y);
     paintGround(ctx, theme, cell, px, py, hash(x, y), light === 1);
@@ -663,6 +668,85 @@ function updateBits(ctx, view, dt) {
     ctx.font = `${f.size || 12}px ui-monospace, monospace`;
     ctx.fillText(f.text, f.x - 8, f.y);
     ctx.globalAlpha = 1;
+  }
+}
+
+function carveScars(ctx, theme, px, py, bites) {
+  const carved = new Uint8Array(TILE * TILE);
+  const lip = new Uint8Array(TILE * TILE);
+  for (const bite of bites) {
+    let n = bite.seed >>> 0;
+    bite.pts.forEach((p, step) => {
+      const rad = Math.max(1.2, p.r * (step === 0 ? 1 : 0.8));
+      const reach = Math.ceil(rad + 1.4);
+      for (let y = -reach; y <= reach; y++) {
+        for (let x = -reach; x <= reach; x++) {
+          const tx = Math.round(p.x + x);
+          const ty = Math.round(p.y + y);
+          if (tx < 0 || ty < 0 || tx >= TILE || ty >= TILE) continue;
+          n = (Math.imul(n ^ (tx * 19 + ty), 1664525) + 1013904223) >>> 0;
+          const jag = ((n >>> 8) & 3) * 0.16;
+          const dist = Math.hypot(x / (0.85 + p.squash * 0.2), y);
+          const id = ty * TILE + tx;
+          if (dist <= rad * (0.92 + jag)) carved[id] = 1;
+          else if (dist <= rad * (0.92 + jag) + 1.15) lip[id] = 1;
+        }
+      }
+    });
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(px, py, TILE, TILE);
+  ctx.clip();
+  ctx.fillStyle = "rgba(0,0,0,.72)";
+  for (let i = 0; i < lip.length; i++) {
+    if (!lip[i] || carved[i]) continue;
+    ctx.fillRect(px + (i % TILE), py + ((i / TILE) | 0), 1, 1);
+  }
+  ctx.fillStyle = theme.void;
+  for (let i = 0; i < carved.length; i++) {
+    if (!carved[i]) continue;
+    ctx.fillRect(px + (i % TILE), py + ((i / TILE) | 0), 1, 1);
+  }
+  ctx.fillStyle = theme.wallHi;
+  for (let i = 0; i < lip.length; i++) {
+    if (!lip[i] || carved[i]) continue;
+    const x = i % TILE;
+    const y = (i / TILE) | 0;
+    const openBelow = y + 1 < TILE && carved[(y + 1) * TILE + x];
+    if (openBelow && ((x + y) & 3) === 0) ctx.fillRect(px + x, py + y, 1, 1);
+  }
+  ctx.restore();
+}
+
+function addFleck(view, x, y) {
+  view.flecks.push({ x, y, life: 3.2, max: 3.2 });
+  if (view.flecks.length > 40) view.flecks.shift();
+}
+
+function drawFlecks(ctx, match, view, dt) {
+  for (let i = view.flecks.length - 1; i >= 0; i--) {
+    const f = view.flecks[i];
+    f.life -= dt;
+    if (f.life <= 0) {
+      view.flecks.splice(i, 1);
+      continue;
+    }
+    const id = f.y * COLS + f.x;
+    if (!match.seen[id] || match.type[id] !== WALL) continue;
+    const alpha = f.life < 0.9 ? Math.max(0, f.life / 0.9) : 0.95;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(f.x * TILE, f.y * TILE, TILE, TILE);
+    ctx.clip();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#050505";
+    const left = f.x * TILE;
+    const top = f.y * TILE;
+    ctx.fillRect(left + 5, top + 7, TILE - 11, TILE - 13);
+    ctx.fillRect(left + 8, top + 4, 12, TILE - 9);
+    ctx.fillRect(left + 3, top + 11, 8, 8);
+    ctx.restore();
   }
 }
 
