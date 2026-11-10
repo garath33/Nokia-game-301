@@ -962,19 +962,19 @@ function drawGift(ctx, match, theme) {
   ctx.fillStyle = theme.good;
   for (let i = 0; i < 10; i++) {
     const ang = (i / 10) * Math.PI * 2 + gift.t * 4;
-    const rad = 10 + burst * 42;
+    const rad = 26 + burst * 34;
     ctx.globalAlpha = (1 - burst) * emerge;
-    ctx.fillRect(pos.x + Math.cos(ang) * rad - 1.5, pos.y - 16 + Math.sin(ang) * rad * 0.55 - 1.5, 3, 3);
+    ctx.fillRect(pos.x + Math.cos(ang) * rad - 1.5, pos.y + Math.sin(ang) * rad * 0.62 - 1.5, 3, 3);
   }
   ctx.globalAlpha = emerge * fade;
   ctx.textAlign = "center";
   ctx.textBaseline = "bottom";
   ctx.font = "15px ui-monospace, monospace";
-  ctx.fillText(GIFT.line, pos.x, pos.y - 86);
+  ctx.fillText(GIFT.line, pos.x, pos.y - 158);
   ctx.font = "bold 26px ui-monospace, monospace";
-  ctx.fillText(copy.name, pos.x, pos.y - 62);
+  ctx.fillText(copy.name, pos.x, pos.y - 130);
   ctx.font = "14px ui-monospace, monospace";
-  ctx.fillText(copy.detail, pos.x, pos.y - 40);
+  ctx.fillText(copy.detail, pos.x, pos.y - 104);
   ctx.restore();
 }
 
