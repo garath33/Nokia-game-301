@@ -1,6 +1,5 @@
 import {
   AIR,
-  BOON_POWER,
   CLAY,
   COLS,
   GRAVEL,
@@ -12,6 +11,7 @@ import {
   TILE,
   WALL,
   GIFT,
+  giftLabel,
   duckLevel,
   fighterPixel,
   ghostSpot,
@@ -224,12 +224,6 @@ function drawTile(ctx, match, theme, x, y, i, light, time) {
       ctx.globalAlpha = light < 1 ? 0.55 : 1;
     }
   }
-  if (match.boon && match.boon[i]) drawBoon(ctx, theme, px, py, match.boon[i], time, light);
-  if (match.lootAt && match.lootAt[i] && !match.boon[i]) {
-    ctx.fillStyle = theme.good;
-    ctx.globalAlpha = light < 1 ? 0.35 : 0.8;
-    ctx.fillRect(px + 12, py + 12, 4, 4);
-  }
   if (match.scar && match.scar[i]) {
     ctx.strokeStyle = theme.crack;
     ctx.globalAlpha = 0.28 * match.scar[i];
@@ -266,32 +260,6 @@ function paintGround(ctx, theme, cell, px, py, n, full) {
     const sy = py + ((n >> (s + 3)) % (TILE - 3));
     ctx.fillRect(sx, sy, 2, 2);
   }
-}
-
-function drawBoon(ctx, theme, px, py, kind, time, light) {
-  const pulse = 0.55 + 0.45 * Math.sin(time * 6 + px * 0.15);
-  ctx.save();
-  ctx.globalAlpha = light < 1 ? 0.8 : 1;
-  ctx.fillStyle = "#071007";
-  ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
-  ctx.fillStyle = theme.good;
-  ctx.globalAlpha = (light < 1 ? 0.75 : 1) * (0.7 + 0.3 * pulse);
-  ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = kind === BOON_POWER ? theme.player.beak : "#102000";
-  ctx.beginPath();
-  if (kind === BOON_POWER) {
-    ctx.moveTo(px + 7, py + TILE / 2);
-    ctx.lineTo(px + TILE - 6, py + 7);
-    ctx.lineTo(px + TILE - 6, py + TILE - 7);
-  } else {
-    ctx.rect(px + 7, py + 7, 4, TILE - 14);
-    ctx.rect(px + 13, py + 7, 4, TILE - 14);
-    ctx.rect(px + 19, py + 7, 4, TILE - 14);
-  }
-  ctx.fill();
-  ctx.restore();
-  ctx.globalAlpha = light < 1 ? 0.55 : 1;
 }
 
 function paintCyberTile(ctx, theme, pal, px, py, n, full) {
@@ -986,19 +954,27 @@ function drawGift(ctx, match, theme) {
   const gift = match.gifts && match.gifts[0];
   if (!gift || !match.player) return;
   const pos = fighterPixel(match.player);
+  const copy = giftLabel(gift);
   const emerge = Math.min(1, gift.t / 0.15);
   const fade = gift.t > gift.max - 0.35 ? Math.max(0, (gift.max - gift.t) / 0.35) : 1;
+  const burst = Math.min(1, gift.t / 0.55);
   ctx.save();
+  ctx.fillStyle = theme.good;
+  for (let i = 0; i < 10; i++) {
+    const ang = (i / 10) * Math.PI * 2 + gift.t * 4;
+    const rad = 26 + burst * 34;
+    ctx.globalAlpha = (1 - burst) * emerge;
+    ctx.fillRect(pos.x + Math.cos(ang) * rad - 1.5, pos.y + Math.sin(ang) * rad * 0.62 - 1.5, 3, 3);
+  }
   ctx.globalAlpha = emerge * fade;
   ctx.textAlign = "center";
   ctx.textBaseline = "bottom";
-  ctx.fillStyle = theme.good;
   ctx.font = "15px ui-monospace, monospace";
-  ctx.fillText(GIFT.line, pos.x, pos.y - 86);
+  ctx.fillText(GIFT.line, pos.x, pos.y - 158);
   ctx.font = "bold 26px ui-monospace, monospace";
-  ctx.fillText(GIFT.name, pos.x, pos.y - 62);
+  ctx.fillText(copy.name, pos.x, pos.y - 130);
   ctx.font = "14px ui-monospace, monospace";
-  ctx.fillText(gift.id === "power" ? GIFT.power : GIFT.rate, pos.x, pos.y - 40);
+  ctx.fillText(copy.detail, pos.x, pos.y - 104);
   ctx.restore();
 }
 

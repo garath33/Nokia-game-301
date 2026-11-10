@@ -5,6 +5,7 @@ import {
   DIFFICULTIES,
   SHOP,
   GIFT,
+  giftLabel,
   VICTORY,
   WINS_OPTIONS,
   buy,
@@ -442,10 +443,11 @@ function react(before, energy) {
       audio.hit(event.kind === "player");
       if (event.kind === "player") audio.quack();
     }
-    if (event.t === "boon") {
+    if (event.t === "boon" || event.t === "loot") {
       audio.boon();
-      const what = event.id === "power" ? GIFT.power : GIFT.rate;
-      status.textContent = `${GIFT.line} ${GIFT.name} ${what}`;
+      const gift = match.gifts[match.gifts.length - 1];
+      const copy = giftLabel(gift);
+      status.textContent = `${GIFT.line} ${copy.name} ${copy.detail}`;
     }
     if (event.t === "boom" && event.kind === "enemy") {
       if (match.phase === "over" && match.victor === "player") audio.triumph();

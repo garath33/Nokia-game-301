@@ -4,6 +4,10 @@
 
 Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
 
+## 15 — 10. 11. 2026
+
+Kostičky a nálezy v zemi nejsou vidět, dokud na ně kačenka nenajede. V tu chvíli nad ní vyletí jiskry a text, co získala. Dobíjení v domečku je o 30 % rychlejší. Chůze je o 20 % pomalejší.
+
 ## 14 — 9. 11. 2026
 
 Složená je tahle řada s větví, která už byla na hlavní. Výbuch dál okusuje pevnou zeď a zásah do zdi nechá flek, který zmizí. GhostDuck, křížový šrám a stopa míčku zůstávají. Pull request kvůli tomu už nejde sloučit s konfliktem.
