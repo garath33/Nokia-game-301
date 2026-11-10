@@ -1,12 +1,16 @@
 # Verze Kačíka
 
-Verze je hlavní číslo a subverze: `GAME_VERSION` v `js/version.js`, teď `15.1`. V Kačíkovi je nápis `verze 15.1` uprostřed nahoře a pod názvem v menu. V Kachně 3310 je vlevo dole. Stejné číslo je v titulku karty prohlížeče. Každá další feature zvedne subverzi o 1 a zároveň hlavní verzi o 1. Subverze se nevrací na začátek, takže z 15.1 bude příští feature 16.2 a potom 17.3. Nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem. `npm test` hlídá, že číslo v kódu, na obou stránkách a tady v prvním záznamu je totéž.
+Verze je hlavní číslo a dvoumístná subverze: `GAME_VERSION` v `js/version.js`, teď `15.02`. V Kačíkovi je nápis `verze 15.02` uprostřed nahoře a pod názvem v menu. V Kachně 3310 je vlevo dole. Stejné číslo je v titulku karty prohlížeče. Každá feature nebo úprava zvedne subverzi o 1, třeba z 15.02 na 15.03. Hlavní číslo zůstává, dokud o novou verzi není požádáno. Nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem. `npm test` hlídá, že číslo v kódu, na obou stránkách a tady v prvním záznamu je totéž.
 
 Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
 
-## 15.1 — 10. 11. 2026
+## 15.02 — 10. 11. 2026
 
-Hudba a efekty jdou zase zapnout a vypnout zvlášť, v menu i v pauze. M přepíná hudbu, N efekty. Místo jedné smyčky jsou čtyři skladby: Pochod, Bažina, Rychlík a Kolébka. Každé kolo si vylosuje jinou než tu minulou. Uvnitř se po průchodu střídá druhý hlas, aby se melodie pořád neopakovala.
+Místo jedné smyčky jsou čtyři skladby: Pochod, Bažina, Rychlík a Kolébka. Každé kolo si vylosuje jinou než tu minulou. Uvnitř se po průchodu střídá druhý hlas, aby se melodie pořád neopakovala.
+
+## 15.01 — 10. 11. 2026
+
+Hudba a efekty jdou zase zapnout a vypnout zvlášť, v menu i v pauze. M přepíná hudbu, N efekty. Volba se uloží.
 
 ## 14 — 9. 11. 2026
 
