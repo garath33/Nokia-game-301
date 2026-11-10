@@ -1,6 +1,6 @@
 # Kačík
 
-Aktuální verze je **15**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **16**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
@@ -20,7 +20,7 @@ npm start
 
 Pak otevři `http://localhost:8765`.
 
-Na telefonu je vlevo kruhový knipl a vpravo kulatá střelba. Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M ztlumí zvuk, Esc nebo tlačítko Pauza je pauza.
+Na telefonu je vlevo kruhový knipl a vpravo kulatá střelba. Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu, N přepíná efekty. Esc nebo tlačítko Pauza je pauza. V menu i v pauze jsou oba přepínače.
 
 V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (dvě fialové na kostkách i na kačence, tyrkysový zobák, obrys a potrubí, soupeř černobílý).
 
@@ -45,6 +45,6 @@ Synthrohlík dá 10 kvá krát kombo. Kombo drží deset dílků, strop je ×5. 
 
 ## Test
 
-`npm test` pustí pravidla Kačíka (`tests/sim.test.js`), jeden průchod hráče (`tests/experience.test.js`), pravidla Kachny 3310 (`test/logic.test.js`) a shodu čísla verze (`tests/version.test.js`).
+`npm test` pustí pravidla Kačíka (`tests/sim.test.js`), jeden průchod hráče (`tests/experience.test.js`), pravidla Kachny 3310 (`test/logic.test.js`), shodu čísla verze (`tests/version.test.js`), skladby (`tests/audio.test.js`) a to, že hudba a efekty mají vlastní tlačítka (`tests/sound-split.test.js`).
 
 Ve hře stačí minuta: Na 3, vyjít z krytu, prostřílet pár polí, vrátit se a počkat na 100 %. Výstřel má být slyšet přes hudbu. Kvákání po zásahu ne častěji než jednou za dvě sekundy.

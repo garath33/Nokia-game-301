@@ -4,6 +4,12 @@
 
 Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
 
+## 16 — 10. 11. 2026
+
+Hudba a efekty jdou zapnout a vypnout zvlášť, v menu i v pauze. M přepíná hudbu, N efekty. Čtyři skladby se po kolech střídají. Test `tests/sound-split.test.js` hlídá, že jedno společné tlačítko Zvuk už menu nemá.
+
+Rozdělení bylo ve verzi 9 a na hlavní větvi se vrátilo jako její verze 15. Tahle zveřejněná řada se mezitím od hlavní oddělila a vlastní verzi 15 použila na schované nálezy, takže se tam to rozdělení nedostalo. Zůstal jeden přepínač pro všechen zvuk.
+
 ## 15 — 10. 11. 2026
 
 Kostičky a nálezy v zemi nejsou vidět, dokud na ně kačenka nenajede. V tu chvíli nad ní vyletí jiskry a text, co získala. Dobíjení v domečku je o 30 % rychlejší. Chůze je o 20 % pomalejší.
