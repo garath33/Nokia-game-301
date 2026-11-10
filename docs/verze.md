@@ -4,6 +4,10 @@
 
 Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
 
+## 15 — 10. 11. 2026
+
+Hudba a efekty jdou zase zapnout a vypnout zvlášť, v menu i v pauze. M přepíná hudbu, N efekty. Místo jedné smyčky jsou čtyři skladby: Pochod, Bažina, Rychlík a Kolébka. Každé kolo si vylosuje jinou než tu minulou. Uvnitř se po průchodu střídá druhý hlas, aby se melodie pořád neopakovala.
+
 ## 14 — 9. 11. 2026
 
 Složená je tahle řada s větví, která už byla na hlavní. Výbuch dál okusuje pevnou zeď a zásah do zdi nechá flek, který zmizí. GhostDuck, křížový šrám a stopa míčku zůstávají. Pull request kvůli tomu už nejde sloučit s konfliktem.
