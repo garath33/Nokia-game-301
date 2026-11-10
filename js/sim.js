@@ -41,7 +41,8 @@ export const GIFT = {
 
 export const SHOT_COST = 8.5;
 export const SHOT_FLOOR = 1;
-export const SHELTER_REGEN = 1.4;
+export const SHELTER_REGEN = 1.4 * 1.3;
+export const WALK = 0.8;
 export const HIT_GRACE = 0.25;
 export const LOOT_EVERY = 30;
 
@@ -515,6 +516,7 @@ function updateFighter(match, f, dt, drainOn, speedMul) {
       f.bx = f.tx;
       f.by = f.ty;
       claimBoon(match, f);
+      claimLoot(match, f);
     }
   } else if (!waiting && f.wish != null) {
     tryMoveOrDig(match, f, dt, speedMul);
@@ -573,7 +575,6 @@ function tryMoveOrDig(match, f, dt, speedMul) {
     return;
   }
   if (f.jackT > 0 && cell !== AIR && cell !== PAD) {
-    if (f.kind === "player") takeLoot(match, nx, ny);
     clearCell(match, nx, ny);
     f.digging = false;
     f.digT = 0;
@@ -622,7 +623,6 @@ function tryMoveOrDig(match, f, dt, speedMul) {
   if (f.digT < f.digNeed) return;
 
   f.energy -= cost;
-  if (f.kind === "player") takeLoot(match, nx, ny);
   clearCell(match, nx, ny);
   f.digging = false;
   f.digT = 0;
@@ -639,7 +639,7 @@ function startMove(f, nx, ny, dur) {
   f.bx = nx;
   f.by = ny;
   f.mt = 0;
-  f.dur = Math.max(0.04, dur);
+  f.dur = Math.max(0.04, dur / WALK);
 }
 
 function tryShoot(match, f) {
@@ -773,14 +773,10 @@ function chew(match, b, tx, ty, cell, id) {
     match.rock[id] -= b.rockDmg || 1;
     nick(match, tx, ty, 2);
     pushEvent(match, { t: "chip", x: tx, y: ty });
-    if (match.rock[id] <= 0) {
-      if (b.owner === "player") takeLoot(match, tx, ty);
-      openByShot(match, tx, ty);
-    }
+    if (match.rock[id] <= 0) openByShot(match, tx, ty);
     return true;
   }
   if (b.pen >= info.pen) {
-    if (b.owner === "player") takeLoot(match, tx, ty);
     openByShot(match, tx, ty);
     b.pen -= info.pen;
     pushEvent(match, { t: "chip", x: tx, y: ty });
@@ -986,9 +982,9 @@ function plantLoot(match, rng) {
   }
 }
 
-function takeLoot(match, x, y) {
-  if (!match.lootAt) return;
-  const i = y * COLS + x;
+function claimLoot(match, f) {
+  if (f.kind !== "player" || !match.lootAt) return;
+  const i = f.ty * COLS + f.tx;
   const code = match.lootAt[i];
   if (!code) return;
   match.lootAt[i] = 0;
@@ -998,7 +994,38 @@ function takeLoot(match, x, y) {
   else if (id === "inv") match.player.invT = 30;
   else if (id === "ghost") match.player.ghostT = 40;
   else match.upgrades[id] = Math.min((match.upgrades[id] || 0) + 1, SHOP.find((entry) => entry.id === id).max);
-  pushEvent(match, { t: "loot", x, y, id });
+  pushEvent(match, { t: "loot", x: f.tx, y: f.ty, id });
+  match.gifts.push({ id, t: 0, max: 2.5, found: "loot" });
+}
+
+export function giftLabel(gift) {
+  if (!gift || gift.found !== "loot") {
+    return {
+      name: GIFT.name,
+      detail: gift && gift.id === "rate" ? GIFT.rate : GIFT.power,
+    };
+  }
+  const names = {
+    power: "Průraz!",
+    rate: "Kadenci!",
+    speed: "Rychlost chůze!",
+    spread: "Trojstřel!",
+    jack: "Zbíječku!",
+    inv: "Nezranitelnost!",
+    ghost: "GhostDuck!",
+    laser: "Laser!",
+  };
+  const details = {
+    power: "Natrvalo.",
+    rate: "Natrvalo.",
+    speed: "Natrvalo.",
+    spread: "Natrvalo.",
+    jack: "20 sekund.",
+    inv: "30 sekund.",
+    ghost: "40 sekund.",
+    laser: "Natrvalo.",
+  };
+  return { name: names[gift.id] || "Nález!", detail: details[gift.id] || "" };
 }
 
 function lootOpen(match, id) {

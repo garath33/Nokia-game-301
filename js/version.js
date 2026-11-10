@@ -1,5 +1,5 @@
 // Jediné číslo verze. Zvedni ho o 1 při každé změně hry a zapiš docs/verze.md.
-export const GAME_VERSION = 14;
+export const GAME_VERSION = 15;
 
 export function versionLabel() {
   return `verze ${GAME_VERSION}`;

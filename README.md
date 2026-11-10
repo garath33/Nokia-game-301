@@ -1,12 +1,12 @@
 # Kačík
 
-Aktuální verze je **14**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **15**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
 Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, pancíř 4. Body se mezi koly neztratí, takže se dají schovat. Koupené vylepšení zůstává celý zápas.
 
-V zemi svítí pár kachních kostiček. Najetí na ně přidá průraz nebo kadenci hned a ještě na příští kolo. Když v tom příštím kole někdo zemře, bonus zmizí a střelba je zase jen ta koupená. Napořád nezůstane. Když jsi nekupoval, střelba je znovu ta výchozí.
+V zemi leží pár kachních kostiček a nálezů, ale nejsou vidět. Až na ně kačenka najede, nad ní se rozletí jiskry a nápis, co získala. Kostička přidá průraz nebo kadenci hned a ještě na příští kolo. Když v tom příštím kole někdo zemře, bonus zmizí a střelba je zase jen ta koupená. Napořád nezůstane. Když jsi nekupoval, střelba je znovu ta výchozí.
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet. Výhra na ten počet kol se ohlásí větou: Vítězství! Nechť tě kachní síla provází.
 

@@ -10,10 +10,12 @@ import {
   SAND,
   TILE,
   SHELTER_REGEN,
+  WALK,
   SHOT_COST,
   SHOT_FLOOR,
   SOIL,
   GIFT,
+  giftLabel,
   VICTORY,
   WALL,
   densityOf,
@@ -681,6 +683,43 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   const parked = match.player.energy;
   step(match, idle, 0.4);
   assert(match.player.energy >= parked, "the player refills in the rival shelter");
+}
+
+{
+  const match = createMatch({ seed: 40, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.drain = 0;
+  match.diff.regen = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  match.type[y * COLS + x] = AIR;
+  match.pad[y * COLS + x] = 0;
+  step(match, { ...idle, right: true }, 0.02);
+  close(match.player.dur, 0.12 / WALK, 0.001, "walk is twenty percent slower");
+  assert(Math.abs(SHELTER_REGEN - 1.4 * 1.3) < 1e-9, "shelter refill is thirty percent faster");
+}
+
+{
+  const match = createMatch({ seed: 41, difficulty: "normal" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.diff.drain = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  const id = y * COLS + x;
+  match.type[id] = SAND;
+  match.pad[id] = 0;
+  match.rock[id] = 0;
+  match.lootAt[id] = 7;
+  match.player.facing = 2;
+  match.player.energy = 90;
+  step(match, shoot, 0.05);
+  step(match, idle, 0.45);
+  assert(match.player.ghostT === 0, "a shot does not hand over the hidden find");
+  let guard = 0;
+  while (match.player.tx !== x && guard++ < 80) step(match, { ...idle, right: true }, 0.05);
+  assert(match.player.ghostT > 39, "stepping on the hidden find starts GhostDuck");
+  assert(giftLabel(match.gifts[0]).name === "GhostDuck!", "the find names itself");
 }
 
 if (failed) {
