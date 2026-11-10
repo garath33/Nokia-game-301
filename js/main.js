@@ -150,7 +150,8 @@ let winsNeeded = WINS_OPTIONS.includes(save.winsNeeded) ? save.winsNeeded : 3;
 let mode = "splash";
 let match = null;
 let best = save.matches || 0;
-audio.setMuted(!!save.mute);
+audio.setMusic(initialMusic(save));
+audio.setEffects(initialEffects(save));
 
 const keys = { left: false, right: false, up: false, down: false, shoot: false };
 let last = performance.now();
@@ -176,7 +177,12 @@ document.getElementById("offer-shop").addEventListener("click", () => {
 });
 document.getElementById("next").addEventListener("click", () => continueRound());
 document.getElementById("between-next").addEventListener("click", () => continueRound());
-document.getElementById("mute").addEventListener("click", () => toggleMute());
+for (const button of document.querySelectorAll("[data-sound]")) {
+  button.addEventListener("click", () => {
+    if (button.dataset.sound === "music") toggleMusic();
+    else toggleEffects();
+  });
+}
 
 for (const button of document.querySelectorAll("[data-diff]")) {
   button.addEventListener("click", () => {
@@ -223,7 +229,11 @@ window.addEventListener("keydown", (event) => {
   if (event.repeat) return;
   const key = event.key.toLowerCase();
   if (key === "m") {
-    toggleMute();
+    toggleMusic();
+    return;
+  }
+  if (key === "n") {
+    toggleEffects();
     return;
   }
   if (key === "escape") {
@@ -349,6 +359,7 @@ function setKey(code, down) {
 
 function startGame() {
   audio.click();
+  audio.nextRound();
   audio.resume();
   match = createMatch({
     seed: (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
@@ -366,6 +377,7 @@ function startGame() {
 function continueRound() {
   if (!match || (match.phase !== "shop" && match.phase !== "between")) return;
   audio.click();
+  audio.nextRound();
   startNextRound(match);
   view.ready = false;
   view.flecks.length = 0;
@@ -382,6 +394,7 @@ function tryBuy(id) {
 
 function setMode(next) {
   mode = next;
+  paintSound();
   splash.classList.toggle("hidden", mode !== "splash");
   menu.classList.toggle("hidden", mode !== "menu");
   offer.classList.toggle("hidden", mode !== "offer");
@@ -437,7 +450,12 @@ function frame(now) {
 function react(before, energy) {
   for (const event of match.events) {
     if (event.t === "dig" && event.kind === "player") audio.dig();
-    if (event.t === "shoot") audio.shoot(event.kind === "enemy");
+    if (event.t === "shoot") {
+      const pan = event.kind === "enemy"
+        ? Math.max(-1, Math.min(1, (event.x - match.player.tx) / 18))
+        : 0;
+      audio.shoot(event.kind === "enemy", pan);
+    }
     if (event.t === "hit") {
       audio.hit(event.kind === "player");
       if (event.kind === "player") audio.quack();
@@ -473,7 +491,7 @@ function renderMenu() {
   document.getElementById("best").textContent = best
     ? `Vyhrané zápasy: ${best}`
     : "Ještě žádný vyhraný zápas.";
-  document.getElementById("mute").textContent = audio.muted ? "Zvuk: vypnuto" : "Zvuk: zapnuto";
+  paintSound();
   for (const button of document.querySelectorAll("[data-diff]")) {
     button.setAttribute("aria-pressed", String(button.dataset.diff === difficulty));
   }
@@ -574,14 +592,49 @@ function applyTheme() {
   document.body.dataset.theme = themeId;
 }
 
-function toggleMute() {
-  audio.setMuted(!audio.muted);
-  if (!audio.muted) {
+function toggleMusic() {
+  audio.setMusic(!audio.music);
+  if (audio.music) audio.resume();
+  persist();
+  paintSound();
+}
+
+function toggleEffects() {
+  audio.setEffects(!audio.effects);
+  if (audio.effects) {
     audio.resume();
     audio.click();
   }
   persist();
-  if (mode === "menu") renderMenu();
+  paintSound();
+}
+
+function paintSound() {
+  for (const button of document.querySelectorAll('[data-sound="music"]')) {
+    button.textContent = audio.music ? "Hudba: zapnuto" : "Hudba: vypnuto";
+    button.setAttribute("aria-pressed", String(audio.music));
+  }
+  for (const button of document.querySelectorAll('[data-sound="effects"]')) {
+    button.textContent = audio.effects ? "Efekty: zapnuto" : "Efekty: vypnuto";
+    button.setAttribute("aria-pressed", String(audio.effects));
+  }
+  const line = audio.music ? `Teď hraje: ${audio.song}` : "Hudba je vypnutá.";
+  for (const node of document.querySelectorAll("[data-song-name]")) node.textContent = line;
+}
+
+function initialMusic(save) {
+  if (typeof save.music === "boolean") return save.music;
+  if (save.music === "off") return false;
+  if (save.music === "on" || save.music === "quiet") return true;
+  if (save.mute === true) return false;
+  return true;
+}
+
+function initialEffects(save) {
+  if (typeof save.effects === "boolean") return save.effects;
+  if (typeof save.shots === "boolean") return save.shots;
+  if (save.mute === true) return false;
+  return true;
 }
 
 function viewSize() {
@@ -605,7 +658,14 @@ function resize() {
 }
 
 function persist() {
-  const data = { theme: themeId, difficulty, winsNeeded, matches: best, mute: audio.muted };
+  const data = {
+    theme: themeId,
+    difficulty,
+    winsNeeded,
+    matches: best,
+    music: audio.music,
+    effects: audio.effects,
+  };
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   save = data;
 }

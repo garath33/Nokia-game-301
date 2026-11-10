@@ -1,6 +1,6 @@
 # Kačík
 
-Aktuální verze je **14**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **15**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
@@ -10,7 +10,7 @@ V zemi svítí pár kachních kostiček. Najetí na ně přidá průraz nebo kad
 
 V menu se volí délka zápasu: na 3, 5 nebo 8 vítězných kol. Prohrané kolo zápas neskončí, dokud soupeř nenasbírá stejný počet. Výhra na ten počet kol se ohlásí větou: Vítězství! Nechť tě kachní síla provází.
 
-Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. V klasickém vzhledu je hráčova kačenka žlutá s oranžovým zobákem a při pancíři má stříbrnou helmu, černý průzor a oranžový zobák. Soupeř je světle šedá kulatá kachna s oranžovým zobákem a třemi ocasními pery. V cyberpunku má hráčova kačenka tělo ze dvou fialových, zobák a obrys tyrkysové, zem je z fialových kostek se tyrkysovou spárou a soupeř je černobílý. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí hraje původní osmibitová smyčka, výstřel má vlastní ránu.
+Mapa je složená z pásů s různou hustotou, podobně jako arény mají různě natěsnané bloky: písek 1, hlína 2, jíl 4, štěrk 6, skála 9. Mezi nimi stojí pevné pilíře. V klasickém vzhledu je hráčova kačenka žlutá s oranžovým zobákem a při pancíři má stříbrnou helmu, černý průzor a oranžový zobák. Soupeř je světle šedá kulatá kachna s oranžovým zobákem a třemi ocasními pery. V cyberpunku má hráčova kačenka tělo ze dvou fialových, zobák a obrys tyrkysové, zem je z fialových kostek se tyrkysovou spárou a soupeř je černobílý. Po zásahu kvákne, nejdřív za dvě sekundy znovu. V pozadí se střídají čtyři původní skladby, Pochod, Bažina, Rychlík a Kolébka. Každé kolo hraje jiná než to minulé a uvnitř se po průchodu přidá druhý hlas. Výstřel, hrabání a kvák mají vlastní rány. Hudba a efekty se dají vypnout zvlášť.
 
 ## Hraní
 
@@ -20,7 +20,7 @@ npm start
 
 Pak otevři `http://localhost:8765`.
 
-Na telefonu je vlevo kruhový knipl a vpravo kulatá střelba. Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M ztlumí zvuk, Esc nebo tlačítko Pauza je pauza.
+Na telefonu je vlevo kruhový knipl a vpravo kulatá střelba. Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu, N přepíná efekty. Esc nebo tlačítko Pauza je pauza. V pauze jsou oba přepínače taky.
 
 V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (dvě fialové na kostkách i na kačence, tyrkysový zobák, obrys a potrubí, soupeř černobílý).
 
