@@ -1,6 +1,6 @@
 # Kačík
 
-Aktuální verze je **15**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **15.1**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Každá další feature zvedne subverzi o 1 a zároveň hlavní verzi o 1, z 15.1 na 16.2 a dál. Nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
 Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
