@@ -34,10 +34,18 @@
         </svg>
         <div>
           <h1>KAČÍK</h1>
-          <p class="sub">Kachní tunelovka</p>
-          <p class="sub" data-version>verze 15</p>
+          <p class="sub" id="style-name">Kačík klasik</p>
+          <script>
+            if (document.body.dataset.theme === "cyber") {
+              document.getElementById("style-name").textContent = "Cyberduck";
+            }
+          </script>
+          <p class="sub" data-version>verze 16</p>
         </div>
       </div>
+      <label class="label" for="duck-name">Jméno kačenky</label>
+      <input id="duck-name" class="name" maxlength="16" autocomplete="nickname" spellcheck="false" value="Kačík" aria-describedby="name-hint">
+      <p id="name-hint" class="keys">Tohle jméno se zapíše k výsledku zápasu.</p>
       <p id="menu-lead" class="lead">Žlutá kačenka proti světle šedému soupeři s oranžovým zobákem a ocasem ze tří per. Při pancíři si hráč nasadí stříbrnou helmu. Mapa je z písku, hlíny, jílu, štěrku a skály, střílí se malými golfovými míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.</p>
       <button id="play" class="primary" type="button">HRÁT</button>
       <div class="label">Zvuk</div>
@@ -54,6 +62,10 @@
         <button type="button" data-diff="hard" aria-pressed="false">Těžká</button>
       </div>
       <p id="blurb" class="blurb"></p>
+      <div class="label" id="board-label">Nejlepších 10</div>
+      <ol id="board" class="board"></ol>
+      <p id="board-empty" class="keys">Na téhle obtížnosti je žebříček ještě prázdný.</p>
+      <p id="board-rule" class="keys">Bednička s vylepšením dá 50, zásah nepřítele 10. Desítka se pamatuje v tomhle prohlížeči, zvlášť pro každou obtížnost.</p>
       <div class="label">Délka zápasu</div>
       <div class="row" role="group" aria-label="Délka zápasu">
         <button type="button" data-wins="3" aria-pressed="true">Na 3</button>
@@ -62,14 +74,14 @@
       </div>
       <div class="label">Vzhled</div>
       <div class="row" role="group" aria-label="Vzhled">
-        <button type="button" data-theme="classic" aria-pressed="true">Klasický Tunneler</button>
-        <button type="button" data-theme="cyber" aria-pressed="false">Cyberpunk</button>
+        <button type="button" data-theme="classic" aria-pressed="true">Kačík klasik</button>
+        <button type="button" data-theme="cyber" aria-pressed="false">Cyberduck</button>
       </div>
       <div id="swatches" class="swatches"></div>
       <div class="help">
         <div><strong>Pohyb</strong><span>Na telefonu kruhový knipl, na počítači šipky nebo WASD. Šikmo jde taky. Vpravo je kulatá střelba.</span></div>
         <div><strong>Střelba</strong><span>Mezerník vystřelí malý míček ve směru zobáku. Zářící kostička přidá průraz nebo kadenci ještě na příští kolo.</span></div>
-        <div><strong>Body</strong><span>Sestřel dá 2 body. Účinnost a kadence stojí 2, pancíř 4.</span></div>
+        <div><strong>Skóre</strong><span id="score-help">Sestřel dá 2 body do obchodu. Do žebříčku jde bednička za 50 a zásah nepřítele za 10.</span></div>
       </div>
       <p id="best" class="best"></p>
       <p class="sidegame"><a href="kachna.html">Kachna 3310, honění vlastního stínu</a></p>
@@ -161,7 +173,7 @@
     <p class="poster-hint">Klepni kamkoliv</p>
   </section>
 
-  <p class="game-version" data-version>verze 15</p>
+  <p class="game-version" data-version>verze 16</p>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

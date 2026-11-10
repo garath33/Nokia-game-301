@@ -551,6 +551,7 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   }
   assert(match.player.tx === x && match.player.ty === y, "duck lands on the tile");
   assert(match.found.power === 1 && match.boon[id] === 0, "landing grants shot power for this round");
+  assert(match.boxes === 1, "a collected upgrade box counts toward the score");
   assert(match.gifts.length === 1 && match.gifts[0].id === "power", "the find announces itself");
   assert(GIFT.line === "Získáváš…" && GIFT.name === "Zbiječku!", "the find is named");
   assert(shootingPower(match) === 1 && shootingRate(match) === 0, "tile power is live");
@@ -573,6 +574,7 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   guard = 0;
   while (match.player.tx !== rateX && guard++ < 50) step(match, { ...idle, right: true }, 0.05);
   assert(match.found.power === 1 && match.found.rate === 1, "both tile bonuses last this round");
+  assert(match.boxes === 2, "the second box counts too");
   assert(shootingRate(match) === 1, "tile rate is live");
 
   match.points = 4;
@@ -603,6 +605,7 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   assert(shootingPower(match) === 1 && shootingRate(match) === 0, "shooting falls back to the purchase");
   assert(startNextRound(match), "the round after that stays clean");
   assert(match.found.power === 0 && match.found.rate === 0, "the tile does not return");
+  assert(match.boxes === 2, "collected boxes stay counted after the bonus drops");
   assert(shootingPower(match) === 1, "only the purchase remains");
 }
 
@@ -647,6 +650,7 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   step(match, idle, 0.05);
   assert(match.enemy.tx === x && match.enemy.ty === y, "rival can cross the tile");
   assert(match.found.power === 0 && match.boon[id] === BOON_POWER, "only the player collects a lucky tile");
+  assert(match.boxes === 0, "the rival does not score a box");
 }
 
 {
@@ -681,6 +685,60 @@ assert(VICTORY.creed === "Nechť tě kachní síla provází.", "victory creed")
   const parked = match.player.energy;
   step(match, idle, 0.4);
   assert(match.player.energy >= parked, "the player refills in the rival shelter");
+}
+
+{
+  const match = createMatch({ seed: 44, difficulty: "normal" });
+  assert(match.hits === 0 && match.boxes === 0, "a match starts without a score");
+  strike(match, match.enemy, 12);
+  assert(match.hits === 1, "a landed shot on the rival counts");
+  strike(match, match.enemy, 12);
+  assert(match.hits === 1, "the grace window is still one hit");
+  match.enemy.hitGrace = 0;
+  strike(match, match.enemy, 12);
+  assert(match.hits === 2, "the next connection counts again");
+  strike(match, match.player, 12);
+  assert(match.hits === 2, "a hit on the player is not a rival hit");
+  match.enemy.invT = 5;
+  match.enemy.hitGrace = 0;
+  strike(match, match.enemy, 12);
+  assert(match.hits === 2, "an untouched rival does not count");
+  match.phase = "between";
+  startNextRound(match);
+  assert(match.hits === 2 && match.boxes === 0, "the score counters last the whole match");
+}
+
+{
+  const match = createMatch({ seed: 45, difficulty: "easy" });
+  match.grace = 0;
+  match.diff.regen = 0;
+  match.diff.drain = 0;
+  const x = match.player.tx + 1;
+  const y = match.player.ty;
+  const id = y * COLS + x;
+  match.type[id] = SAND;
+  match.pad[id] = 0;
+  match.rock[id] = 0;
+  match.boon[id] = 0;
+  match.lootAt[id] = 1;
+  match.player.energy = 90;
+  let guard = 0;
+  while ((match.player.tx !== x || match.player.ty !== y) && guard++ < 80) {
+    step(match, { ...idle, right: true }, 0.05);
+  }
+  assert(match.player.tx === x && match.player.ty === y, "the duck digs out the buried upgrade");
+  assert(match.boxes === 1, "a buried upgrade counts as a box");
+  match.lootAt[id] = 1;
+  match.upgrades.power = 3;
+  match.player.moving = false;
+  match.player.tx = x - 1;
+  match.player.ty = y;
+  match.type[id] = SAND;
+  match.boon[id] = 0;
+  const buried = match.boxes;
+  guard = 0;
+  while (match.player.tx !== x && guard++ < 80) step(match, { ...idle, right: true }, 0.05);
+  assert(match.boxes === buried, "a box that cannot raise the upgrade any further does not count");
 }
 
 if (failed) {

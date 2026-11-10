@@ -2,6 +2,15 @@ import { createAudio } from "./audio.js";
 import { GAME_VERSION, showVersion } from "./version.js";
 import { drawAttract, drawWorld, createView, noteEvents } from "./render.js";
 import {
+  BOX_POINTS,
+  HIT_POINTS,
+  cleanName,
+  countPhrase,
+  readBoards,
+  submitScore,
+  tallyScore,
+} from "./scores.js";
+import {
   DIFFICULTIES,
   SHOP,
   GIFT,
@@ -49,7 +58,7 @@ const CYBER_DUCK = {
 const THEMES = {
   classic: {
     id: "classic",
-    name: "Klasický Tunneler",
+    name: "Kačík klasik",
     void: "#000000",
     air: "#050403",
     soil: ["#6b3a12", "#8a5318", "#a06a22", "#3f7a28", "#8a2e22", "#c2a24a"],
@@ -86,7 +95,7 @@ const THEMES = {
   },
   cyber: {
     id: "cyber",
-    name: "Cyberpunk",
+    name: "Cyberduck",
     void: "#070014",
     air: "#090015",
     soil: ["#64248f", "#54207a", "#c43d96", "#a83280"],
@@ -150,6 +159,9 @@ let winsNeeded = WINS_OPTIONS.includes(save.winsNeeded) ? save.winsNeeded : 3;
 let mode = "splash";
 let match = null;
 let best = save.matches || 0;
+let duckName = cleanName(save.duckName);
+let boards = readBoards(save.boards);
+let lastResult = null;
 audio.setMusic(initialMusic(save));
 audio.setEffects(initialEffects(save));
 
@@ -216,6 +228,32 @@ splash.addEventListener("click", () => {
   setMode("menu");
 });
 
+const duckNameField = document.getElementById("duck-name");
+duckNameField.value = duckName;
+duckNameField.addEventListener("pointerup", () => {
+  if (duckNameField.selectionStart !== duckNameField.selectionEnd) return;
+  duckNameField.select();
+});
+duckNameField.addEventListener("input", () => {
+  duckName = cleanName(duckNameField.value);
+  persist();
+});
+duckNameField.addEventListener("blur", () => {
+  duckName = cleanName(duckNameField.value);
+  duckNameField.value = duckName;
+  persist();
+});
+duckNameField.addEventListener("keydown", (event) => {
+  event.stopPropagation();
+  if (event.key === "Enter") {
+    event.preventDefault();
+    duckName = cleanName(duckNameField.value);
+    duckNameField.value = duckName;
+    persist();
+    startGame();
+  }
+});
+
 window.addEventListener("keydown", (event) => {
   if (mode === "splash") {
     event.preventDefault();
@@ -223,6 +261,7 @@ window.addEventListener("keydown", (event) => {
     setMode("menu");
     return;
   }
+  if (event.target === duckNameField) return;
   audio.resume();
   const move = setKey(event.code, true);
   if (move) event.preventDefault();
@@ -358,6 +397,9 @@ function setKey(code, down) {
 }
 
 function startGame() {
+  duckName = cleanName(duckNameField.value);
+  duckNameField.value = duckName;
+  persist();
   audio.click();
   audio.nextRound();
   audio.resume();
@@ -475,22 +517,34 @@ function react(before, energy) {
   if (before === "play" && match.phase === "shop") setMode("offer");
   if (before === "play" && match.phase === "between") setMode("between");
   if (before === "play" && match.phase === "over") {
-    if (match.victor === "player") {
-      best += 1;
-      persist();
-    }
+    if (match.victor === "player") best += 1;
+    lastResult = submitScore(boards, {
+      name: duckName,
+      difficulty: match.difficulty,
+      hits: match.hits,
+      boxes: match.boxes,
+      winsNeeded: match.winsNeeded,
+      won: match.victor === "player",
+      at: Date.now(),
+    });
+    boards = lastResult.boards;
+    persist();
     setMode("over");
   }
 }
 
 function renderMenu() {
+  document.getElementById("style-name").textContent = THEMES[themeId].name;
   document.getElementById("menu-lead").textContent = themeId === "cyber"
     ? "Kačenka je ze dvou fialových a tyrkysového zobáku. Zem pod ní jsou fialové kostky ve dvou odstínech, spáry a potrubí svítí tyrkysově. Soupeř je černobílý a při pancíři má hráč stříbrnou helmu. Zápas se hraje na 3, 5 nebo 8 vítězných kol."
     : "Žlutá kačenka proti světle šedému soupeři s oranžovým zobákem a ocasem ze tří per. Při pancíři si hráč nasadí stříbrnou helmu. Mapa je z písku, hlíny, jílu, štěrku a skály a malé golfové míčky. Hustší zem klade větší odpor. Zápas se hraje na 3, 5 nebo 8 vítězných kol.";
   document.getElementById("blurb").textContent = DIFFICULTIES[difficulty].blurb;
+  document.getElementById("score-help").textContent =
+    `Sestřel dá 2 body do obchodu. Do žebříčku jde bednička za ${BOX_POINTS} a zásah nepřítele za ${HIT_POINTS}.`;
   document.getElementById("best").textContent = best
     ? `Vyhrané zápasy: ${best}`
     : "Ještě žádný vyhraný zápas.";
+  renderBoard();
   paintSound();
   for (const button of document.querySelectorAll("[data-diff]")) {
     button.setAttribute("aria-pressed", String(button.dataset.diff === difficulty));
@@ -508,6 +562,40 @@ function renderMenu() {
     chip.style.background = color;
     sw.appendChild(chip);
   }
+}
+
+function renderBoard() {
+  const rows = boards[difficulty] || [];
+  document.getElementById("board-label").textContent =
+    `Nejlepších 10 · ${DIFFICULTIES[difficulty].name}`;
+  document.getElementById("board-rule").textContent =
+    `Bednička s vylepšením dá ${BOX_POINTS}, zásah nepřítele ${HIT_POINTS}. Desítka se pamatuje v tomhle prohlížeči, zvlášť pro každou obtížnost.`;
+  const list = document.getElementById("board");
+  const empty = document.getElementById("board-empty");
+  list.replaceChildren();
+  empty.classList.toggle("hidden", rows.length > 0);
+  list.classList.toggle("hidden", rows.length === 0);
+  rows.forEach((row, index) => {
+    const li = document.createElement("li");
+    const rank = document.createElement("span");
+    rank.className = "rank";
+    rank.textContent = `${index + 1}.`;
+    const who = document.createElement("span");
+    who.className = "who";
+    const name = document.createElement("span");
+    name.className = "who-name";
+    name.textContent = row.name;
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    const end = row.won ? "výhra" : "prohra";
+    meta.textContent =
+      `${countPhrase(row.boxes, "bednička", "bedničky", "bedniček")} · ${countPhrase(row.hits, "zásah", "zásahy", "zásahů")} · ${end} na ${row.winsNeeded}`;
+    who.append(name, meta);
+    const score = document.createElement("b");
+    score.textContent = String(row.score);
+    li.append(rank, who, score);
+    list.appendChild(li);
+  });
 }
 
 function renderOffer() {
@@ -583,9 +671,17 @@ function renderOver() {
   creed.textContent = won ? VICTORY.creed : "";
   creed.classList.toggle("hidden", !won);
   const rounds = match.winsNeeded < 5 ? "kola" : "kol";
+  const score = tallyScore(match.hits, match.boxes);
+  const bits = `${countPhrase(match.boxes, "bednička", "bedničky", "bedniček")} a ${countPhrase(match.hits, "zásah", "zásahy", "zásahů")}`;
+  const diffName = DIFFICULTIES[match.difficulty].name;
+  const place = score <= 0
+    ? "Do desítky se zapisuje skóre aspoň z jedné bedničky nebo jednoho zásahu."
+    : lastResult && lastResult.placed
+      ? `V desítce „${diffName}“ je to ${lastResult.rank}. místo, zapsané jako ${duckName}.`
+      : `Do desítky „${diffName}“ to pro ${duckName} tentokrát nevyšlo.`;
   document.getElementById("over-copy").textContent = won
-    ? `Zápas na ${match.winsNeeded} ${rounds} je tvůj. Stav ${match.wins}:${match.losses}. Bodů zbylo ${match.points}. Vyhraných zápasů: ${best}.`
-    : `Prohra ${match.wins}:${match.losses} na ${match.winsNeeded}. Bodů zbylo ${match.points}.`;
+    ? `Zápas na ${match.winsNeeded} ${rounds} je tvůj. Stav ${match.wins}:${match.losses}. Skóre ${score}: ${bits}. ${place} Vyhraných zápasů: ${best}.`
+    : `Prohra ${match.wins}:${match.losses} na ${match.winsNeeded}. Skóre ${score}: ${bits}. ${place}`;
 }
 
 function applyTheme() {
@@ -665,6 +761,8 @@ function persist() {
     matches: best,
     music: audio.music,
     effects: audio.effects,
+    duckName,
+    boards,
   };
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   save = data;

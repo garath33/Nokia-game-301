@@ -2,7 +2,11 @@
 
 Číslo verze je jediné: `GAME_VERSION` v `js/version.js`. V Kačíkovi je nápis `verze N` uprostřed nahoře a pod názvem v menu. V Kachně 3310 je vlevo dole. Stejné číslo je v titulku karty prohlížeče. Nová změna hry zvedne číslo o jedna a připíše sem záznam nahoru. `npm test` hlídá, že číslo v kódu, na obou stránkách a tady v prvním záznamu je totéž.
 
-Verze 9 je starší zveřejněná hra na větvi `cursor/tunik-duck-tunneler-47a0`. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
+Verze 9 je starší zveřejněná hra. Tahle řada začala na 10. Od 11 je v ní kruhový knipl z verze 9.
+
+## 16 — 10. 11. 2026
+
+Zápas má skóre. Sebraná bednička s vylepšením dá 50, zásah nepřítele 10. Po konci zápasu se výsledek zapíše do desítky té obtížnosti, na které se hrál. V menu se kačenka pojmenuje a to jméno stojí u výsledku. Vzhledy se jmenují Kačík klasik a Cyberduck.
 
 ## 15 — 10. 11. 2026
 

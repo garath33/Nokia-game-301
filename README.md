@@ -1,8 +1,8 @@
 # Kačík
 
-Aktuální verze je **15**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
+Aktuální verze je **16**. Číslo je v `js/version.js`, v Kačíkovi uprostřed nahoře a v titulku karty. Na telefonu se chodí kruhovým kniplem a střílí kulatým tlačítkem. Záznam verzí je v [docs/verze.md](docs/verze.md). Při každé změně hry se číslo zvedne o jedna, nahoru do záznamu přibude odstavec a nápis na stránkách se srovná se stejným číslem.
 
-Kachní tunelovka pro prohlížeč. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
+Souboj dvou kačenek v prohlížeči. Dvě stejné kačenky se probíjejí hlínou a střílejí malé golfové míčky. Život ubývá sám od sebe, hrabání ho bere podle odporu země a střela bourá rychleji, ale stojí víc. Život se vrací jen ve vlastním krytu, o 40 % rychleji, a až na 100 %. Na té stovce se znovu zapne pancíř. V krytu výstřel nesejme poslední život: když na řádný výstřel není dost, kačenka se zastaví a čeká, než se dobije.
 
 Sestřel dá **2 body**. Účinnost střelby a rychlost střelby stojí 2, pancíř 4. Body se mezi koly neztratí, takže se dají schovat. Koupené vylepšení zůstává celý zápas.
 
@@ -22,7 +22,9 @@ Pak otevři `http://localhost:8765`.
 
 Na telefonu je vlevo kruhový knipl a vpravo kulatá střelba. Šipky nebo WASD hrabou (jde to i šikmo). Mezerník střílí. M přepíná hudbu, N přepíná efekty. Esc nebo tlačítko Pauza je pauza. V pauze jsou oba přepínače taky.
 
-V menu jsou tři obtížnosti a dva vzhledy: klasická paleta ve stylu Tunneleru a cyberpunk (dvě fialové na kostkách i na kačence, tyrkysový zobák, obrys a potrubí, soupeř černobílý).
+V menu se kačenka pojmenuje. To jméno se pak objeví v desítce nejlepších skóre, zvlášť pro lehkou, normální a těžkou obtížnost. Skóre zápasu je 50 za sebranou bedničku s vylepšením a 10 za zásah nepřítele. Desítka zůstává v tomhle prohlížeči.
+
+V menu jsou tři obtížnosti a dva vzhledy: Kačík klasik a Cyberduck (dvě fialové na kostkách i na kačence, tyrkysový zobák, obrys a potrubí, soupeř černobílý).
 
 ## Pravidla kol
 
