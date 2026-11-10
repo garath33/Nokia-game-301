@@ -346,7 +346,7 @@ body[data-theme="cyber"] .card.victory h2 {
 
 .note { color: var(--muted); min-height: 1.4em; }
 
-.keys { color: var(--muted); font-size: 13px; }
+.keys { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
 
 @media (max-width: 740px) {
   h1 { font-size: 42px; }
