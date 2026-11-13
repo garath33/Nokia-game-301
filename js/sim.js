@@ -1,4 +1,4 @@
-// Tunik — top-down tunnel duel.
+// Kačík — top-down digging duel.
 // Both ducks share one rule set: digging resists, shots chew faster and cost more
 // life, life drains on its own, and only your own shelter refills it.
 // The shelter refills 40% faster. A shot there cannot spend the last of your life:
@@ -308,6 +308,8 @@ export function createMatch(opts = {}) {
     found: { power: 0, rate: 0 },
     kept: { power: 0, rate: 0 },
     gifts: [],
+    hits: 0,
+    boxes: 0,
     phase: "play",
     type: new Uint8Array(COLS * ROWS),
     pad: new Uint8Array(COLS * ROWS),
@@ -397,6 +399,7 @@ export function strike(match, target, raw) {
   }
   target.energy -= amount;
   target.hitGrace = HIT_GRACE;
+  if (target.kind === "enemy") match.hits += 1;
   pushEvent(match, {
     t: "hit",
     x: target.tx,
@@ -994,6 +997,7 @@ function takeLoot(match, x, y) {
   match.lootAt[i] = 0;
   const id = LOOT_IDS[code - 1];
   if (!lootOpen(match, id)) return;
+  match.boxes += 1;
   if (id === "jack") match.player.jackT = 20;
   else if (id === "inv") match.player.invT = 30;
   else if (id === "ghost") match.player.ghostT = 40;
@@ -1375,6 +1379,7 @@ function claimBoon(match, f) {
   const kind = match.boon[id];
   if (kind !== BOON_POWER && kind !== BOON_RATE) return;
   match.boon[id] = 0;
+  match.boxes += 1;
   const power = kind === BOON_POWER;
   if (power) {
     match.found.power += 1;

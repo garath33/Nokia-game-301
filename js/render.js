@@ -16,6 +16,7 @@ import {
   fighterPixel,
   ghostSpot,
 } from "./sim.js";
+import { tallyScore } from "./scores.js";
 
 export function createView() {
   return {
@@ -867,11 +868,19 @@ function drawHud(ctx, w, h, match, theme, ui) {
   ctx.fillStyle = theme.text;
   ctx.font = ui.narrow ? "13px ui-monospace, monospace" : "14px ui-monospace, monospace";
   const score = `${match.wins}:${match.losses}`;
+  const run = tallyScore(match.hits, match.boxes);
   if (ui.narrow) {
-    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b`, 26, top + 20);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(20, top + 4, panelW - 16, 22);
+    ctx.clip();
+    ctx.fillText(`K${match.round} · ${score}/${match.winsNeeded} · ${match.points} b · ${run}`, 26, top + 20);
+    ctx.restore();
   } else {
-    ctx.fillText(`KOLO ${match.round}`, 28, top + 22);
-    ctx.fillText(`BODY ${match.points}`, 150, top + 22);
+    ctx.fillText(`KOLO ${match.round} · BODY ${match.points}`, 28, top + 22);
+    ctx.textAlign = "right";
+    ctx.fillText(`SKÓRE ${run}`, 14 + panelW - 12, top + 22);
+    ctx.textAlign = "left";
     ctx.fillText(`ZÁPAS ${score} NA ${match.winsNeeded}`, 28, top + 40);
     ctx.fillText(`ÚR ${load}`, 230, top + 40);
   }
